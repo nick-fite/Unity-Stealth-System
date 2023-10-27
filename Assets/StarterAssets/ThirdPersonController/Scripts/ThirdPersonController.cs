@@ -97,6 +97,7 @@ namespace StarterAssets
         private int _animIDJump;
         private int _animIDFreeFall;
         private int _animIDMotionSpeed;
+        private int _animIDCrouching;
 
 #if ENABLE_INPUT_SYSTEM 
         private PlayerInput _playerInput;
@@ -109,6 +110,10 @@ namespace StarterAssets
         private const float _threshold = 0.01f;
 
         private bool _hasAnimator;
+
+        private bool stuckToWallX { get; set; }
+        private bool stuckToWallY { get; set; }
+        private bool stuckToWallZ { get; set; }
 
         private bool IsCurrentDeviceMouse
         {
@@ -134,6 +139,9 @@ namespace StarterAssets
 
         private void Start()
         {
+            stuckToWallX = false;
+            stuckToWallY = false;
+            stuckToWallZ = false;
             _cinemachineTargetYaw = CinemachineCameraTarget.transform.rotation.eulerAngles.y;
             
             _hasAnimator = TryGetComponent(out _animator);
@@ -156,6 +164,7 @@ namespace StarterAssets
         {
             _hasAnimator = TryGetComponent(out _animator);
 
+            Crouch();
             JumpAndGravity();
             GroundedCheck();
             Move();
@@ -173,6 +182,7 @@ namespace StarterAssets
             _animIDJump = Animator.StringToHash("Jump");
             _animIDFreeFall = Animator.StringToHash("FreeFall");
             _animIDMotionSpeed = Animator.StringToHash("MotionSpeed");
+            _animIDCrouching = Animator.StringToHash("Crouch");
         }
 
         private void GroundedCheck()
@@ -214,7 +224,7 @@ namespace StarterAssets
         private void Move()
         {
             // set target speed based on move speed, sprint speed and if sprint is pressed
-            float targetSpeed = _input.sprint ? SprintSpeed : MoveSpeed;
+            float targetSpeed = _input.sprint && !_input.crouch ? SprintSpeed : MoveSpeed;
 
             // a simplistic acceleration and deceleration designed to be easy to remove, replace, or iterate upon
 
@@ -268,14 +278,45 @@ namespace StarterAssets
             Vector3 targetDirection = Quaternion.Euler(0.0f, _targetRotation, 0.0f) * Vector3.forward;
 
             // move the player
-            _controller.Move(targetDirection.normalized * (_speed * Time.deltaTime) +
-                             new Vector3(0.0f, _verticalVelocity, 0.0f) * Time.deltaTime);
-
+            Vector3 movement = targetDirection.normalized * (_speed * Time.deltaTime) +
+                                 new Vector3(0.0f, _verticalVelocity, 0.0f) * Time.deltaTime;
+            if (_input.crouch)
+            {
+                if (stuckToWallX)
+                {
+                    _controller.Move(new Vector3(movement.x, 0, 0));
+                }
+                else if (stuckToWallY)
+                {
+                    _controller.Move(new Vector3(0, movement.y, 0));
+                }
+                else if (stuckToWallZ)
+                {
+                    _controller.Move(new Vector3(0, 0, movement.z));
+                }
+                else
+                {
+                    _controller.Move(movement);
+                }
+            }
+            else { _controller.Move(movement); }
             // update animator if using character
             if (_hasAnimator)
             {
-                _animator.SetFloat(_animIDSpeed, _animationBlend);
-                _animator.SetFloat(_animIDMotionSpeed, inputMagnitude);
+                    _animator.SetFloat(_animIDSpeed, _animationBlend);
+                    _animator.SetFloat(_animIDMotionSpeed, inputMagnitude);
+            }
+        }
+
+        private void Crouch() 
+        {
+            if (_input.crouch)
+            {
+                _animator.SetBool(_animIDCrouching, true);
+            }
+            else
+            {
+                _animator.SetBool(_animIDCrouching, false);
             }
         }
 
@@ -354,6 +395,16 @@ namespace StarterAssets
             if (lfAngle > 360f) lfAngle -= 360f;
             return Mathf.Clamp(lfAngle, lfMin, lfMax);
         }
+
+        public bool GetCrouchState() { return _input.crouch; }
+        public bool GetStuckToWallX() { return stuckToWallX; }
+        public bool GetStuckToWallY() { return stuckToWallY; }
+        public bool GetStuckToWallZ() { return stuckToWallZ; }
+
+        public void SetStuckToWallX(bool newValue) { stuckToWallX = newValue; }
+        public void SetStuckToWallY(bool newValue) { stuckToWallY = newValue; }
+        public void SetStuckToWallZ(bool newValue) { stuckToWallZ = newValue; }
+
 
         private void OnDrawGizmosSelected()
         {
