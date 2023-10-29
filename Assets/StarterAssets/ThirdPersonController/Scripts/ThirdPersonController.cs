@@ -1,4 +1,5 @@
-﻿ using UnityEngine;
+﻿using System.Collections;
+using UnityEngine;
 #if ENABLE_INPUT_SYSTEM 
 using UnityEngine.InputSystem;
 #endif
@@ -114,6 +115,11 @@ namespace StarterAssets
         private bool stuckToWallX { get; set; }
         private bool stuckToWallY { get; set; }
         private bool stuckToWallZ { get; set; }
+
+        [Header("Camera")]
+        [SerializeField] private Camera PlayerCam;
+        [SerializeField] private Transform defaultCameraTransform;
+        [SerializeField] private Transform crouchCameraTransform;
 
         private bool IsCurrentDeviceMouse
         {
@@ -280,6 +286,7 @@ namespace StarterAssets
             // move the player
             Vector3 movement = targetDirection.normalized * (_speed * Time.deltaTime) +
                                  new Vector3(0.0f, _verticalVelocity, 0.0f) * Time.deltaTime;
+            /*
             if (_input.crouch)
             {
                 if (stuckToWallX)
@@ -299,7 +306,10 @@ namespace StarterAssets
                     _controller.Move(movement);
                 }
             }
-            else { _controller.Move(movement); }
+            else { _controller.Move(movement); }*/
+
+            _controller.Move(movement);
+
             // update animator if using character
             if (_hasAnimator)
             {
@@ -312,10 +322,13 @@ namespace StarterAssets
         {
             if (_input.crouch)
             {
+                StartCoroutine(ProcessCrouchCam());
                 _animator.SetBool(_animIDCrouching, true);
+
             }
             else
             {
+                StartCoroutine(ProcessUncrouchCam());
                 _animator.SetBool(_animIDCrouching, false);
             }
         }
@@ -396,6 +409,7 @@ namespace StarterAssets
             return Mathf.Clamp(lfAngle, lfMin, lfMax);
         }
 
+        /*
         public bool GetCrouchState() { return _input.crouch; }
         public bool GetStuckToWallX() { return stuckToWallX; }
         public bool GetStuckToWallY() { return stuckToWallY; }
@@ -404,7 +418,35 @@ namespace StarterAssets
         public void SetStuckToWallX(bool newValue) { stuckToWallX = newValue; }
         public void SetStuckToWallY(bool newValue) { stuckToWallY = newValue; }
         public void SetStuckToWallZ(bool newValue) { stuckToWallZ = newValue; }
+        */
 
+        IEnumerator ProcessCrouchCam() 
+        {
+            float rate = 1.0f / Vector3.Distance(CinemachineCameraTarget.transform.position, crouchCameraTransform.position) * 10;
+            float t = 0.0f;
+
+            while (t < 1.0f) 
+            {
+                t += Time.deltaTime * rate;
+                CinemachineCameraTarget.transform.position = Vector3.Lerp(CinemachineCameraTarget.transform.position, crouchCameraTransform.position, t);
+                yield return null;
+            }
+            yield return null;
+        }
+
+        IEnumerator ProcessUncrouchCam()
+        {
+            float rate = 1.0f / Vector3.Distance(CinemachineCameraTarget.transform.position, defaultCameraTransform.position) * 10;
+            float t = 0.0f;
+
+            while (t < 1.0f)
+            {
+                t += Time.deltaTime * rate;
+                CinemachineCameraTarget.transform.position = Vector3.Lerp(CinemachineCameraTarget.transform.position, defaultCameraTransform.position, t);
+                yield return null;
+            }
+            yield return null;
+        }
 
         private void OnDrawGizmosSelected()
         {
