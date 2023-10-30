@@ -13,6 +13,8 @@ namespace StarterAssets
 		public bool jump;
 		public bool sprint;
 		public bool crouch;
+		public bool ads;
+		public bool fire;
 
 		[Header("Movement Settings")]
 		public bool analogMovement;
@@ -51,10 +53,20 @@ namespace StarterAssets
 		{
 			CrouchInput(value.isPressed);
 		}
+
+		public void OnADS(InputValue value) 
+		{
+			ADSInput(value.isPressed);
+		}
+
+        public void OnFire(InputValue value)
+        {
+			FireInput(value.isPressed);
+        }
 #endif
 
 
-		public void MoveInput(Vector2 newMoveDirection)
+        public void MoveInput(Vector2 newMoveDirection)
 		{
 			move = newMoveDirection;
 		} 
@@ -74,12 +86,21 @@ namespace StarterAssets
 			sprint = newSprintState;
 		}
 
-		public void CrouchInput(bool newCrouchState) 
+		private void CrouchInput(bool newCrouchState) 
 		{
 			crouch = newCrouchState;
 		}
 
-		private void OnApplicationFocus(bool hasFocus)
+        private void ADSInput(bool newADSState)
+        {
+			ads = newADSState;
+        }
+        private void FireInput(bool newFireState)
+        {
+			fire = newFireState;
+        }
+
+        private void OnApplicationFocus(bool hasFocus)
 		{
 			SetCursorState(cursorLocked);
 		}

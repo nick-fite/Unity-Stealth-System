@@ -1,4 +1,6 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
+using Unity.VisualScripting;
 using UnityEngine;
 #if ENABLE_INPUT_SYSTEM 
 using UnityEngine.InputSystem;
@@ -100,6 +102,23 @@ namespace StarterAssets
         private int _animIDMotionSpeed;
         private int _animIDCrouching;
 
+        private int _animIDIdleToRight;
+        private int _animIDRightToIdle;
+        private int _animIDIdleToLeft;
+        private int _animIDLeftToIdle;
+        private int _animIDIdleToBackwards;
+        private int _animIDBackwardsToIdle;
+        private int _animIDBackwardsToLeft;
+        private int _animIDLeftToBackwards;
+        private int _animIDLeftToRight;
+        private int _animIDRightToLeft;
+        private int _animIDRightToBackwards;
+        private int _animIDBackwardsToRight;
+
+        private int _animIDADSStateX;
+        private int _animIDADSStateY;
+        private int _animIDADS;
+
 #if ENABLE_INPUT_SYSTEM 
         private PlayerInput _playerInput;
 #endif
@@ -112,9 +131,13 @@ namespace StarterAssets
 
         private bool _hasAnimator;
 
+        /*
         private bool stuckToWallX { get; set; }
         private bool stuckToWallY { get; set; }
         private bool stuckToWallZ { get; set; }
+        */
+
+        private WallDetection wallDectection;
 
         [Header("Camera")]
         [SerializeField] private Camera PlayerCam;
@@ -145,9 +168,11 @@ namespace StarterAssets
 
         private void Start()
         {
-            stuckToWallX = false;
-            stuckToWallY = false;
-            stuckToWallZ = false;
+            //stuckToWallX = false;
+            //stuckToWallY = false;
+            //stuckToWallZ = false;
+
+            wallDectection = GetComponent<WallDetection>();
             _cinemachineTargetYaw = CinemachineCameraTarget.transform.rotation.eulerAngles.y;
             
             _hasAnimator = TryGetComponent(out _animator);
@@ -189,6 +214,12 @@ namespace StarterAssets
             _animIDFreeFall = Animator.StringToHash("FreeFall");
             _animIDMotionSpeed = Animator.StringToHash("MotionSpeed");
             _animIDCrouching = Animator.StringToHash("Crouch");
+            //_animIDLeftStrafe = Animator.StringToHash("LeftStrafe");
+            //_animIDRightStrafe = Animator.StringToHash("RightStrafe");
+            //_animIDWalkBackwards = Animator.StringToHash("WalkBackwards");
+            _animIDADSStateX = Animator.StringToHash("ADSStateX");
+            _animIDADSStateY = Animator.StringToHash("ADSStateY");
+            _animIDADS = Animator.StringToHash("ADS");
         }
 
         private void GroundedCheck()
@@ -271,19 +302,30 @@ namespace StarterAssets
             // if there is a move input rotate player when the player is moving
             if (_input.move != Vector2.zero)
             {
-                _targetRotation = Mathf.Atan2(inputDirection.x, inputDirection.z) * Mathf.Rad2Deg +
-                                  _mainCamera.transform.eulerAngles.y;
-                float rotation = Mathf.SmoothDampAngle(transform.eulerAngles.y, _targetRotation, ref _rotationVelocity,
-                    RotationSmoothTime);
+                if (!_input.ads)
+                {
+                    _targetRotation = Mathf.Atan2(inputDirection.x, inputDirection.z) * Mathf.Rad2Deg +
+                                      _mainCamera.transform.eulerAngles.y;
+                    float rotation = Mathf.SmoothDampAngle(transform.eulerAngles.y, _targetRotation, ref _rotationVelocity,
+                        RotationSmoothTime);
 
-                // rotate to face input direction relative to camera position
-                transform.rotation = Quaternion.Euler(0.0f, rotation, 0.0f);
+                    // rotate to face input direction relative to camera position
+                    transform.rotation = Quaternion.Euler(0.0f, rotation, 0.0f);
+                }
+                else
+                {
+                    _targetRotation = Mathf.Atan2(inputDirection.x, inputDirection.z) * Mathf.Rad2Deg +
+                                         _mainCamera.transform.eulerAngles.y;
+                    float rotation = _mainCamera.transform.rotation.eulerAngles.y;
+
+                    // rotate to face input direction relative to camera position
+                    transform.rotation = Quaternion.Euler(0.0f, rotation, 0.0f);
+                }
             }
-
 
             Vector3 targetDirection = Quaternion.Euler(0.0f, _targetRotation, 0.0f) * Vector3.forward;
 
-            // move the player
+            
             Vector3 movement = targetDirection.normalized * (_speed * Time.deltaTime) +
                                  new Vector3(0.0f, _verticalVelocity, 0.0f) * Time.deltaTime;
             /*
@@ -308,27 +350,99 @@ namespace StarterAssets
             }
             else { _controller.Move(movement); }*/
 
-            _controller.Move(movement);
 
+            if (_input.move != Vector2.zero) {
+                if (wallDectection.GetLeftHit())
+                {
+                    movement += -transform.right * .0003f;
+                }
+                if (wallDectection.GetRightHit())
+                {
+                    movement += transform.right * .0003f;
+                }
+            }
+
+            _controller.Move(movement);
+            
             // update animator if using character
             if (_hasAnimator)
             {
+                if (!_input.ads)
+                {
                     _animator.SetFloat(_animIDSpeed, _animationBlend);
                     _animator.SetFloat(_animIDMotionSpeed, inputMagnitude);
+                    _animator.SetBool(_animIDADS, false);
+                }
+                else
+                {
+                    //Debug.Log(_animator.GetFloat(_animIDADSState));
+                    _animator.SetBool(_animIDADS, true);
+                    if (_input.move.x == -1)
+                    {
+                        if (_animator.GetFloat(_animIDADSStateX) != 1 && _animator.GetFloat(_animIDADSStateY) != 1)
+                        {
+                            TransitionADSAnim(1f, 1f);
+                        }
+                        //_animator.SetBool(_animIDLeftStrafe, true);
+                    }
+
+                    if (_input.move.x == 1)
+                    {
+                        if (_animator.GetFloat(_animIDADSStateX) != -1 && _animator.GetFloat(_animIDADSStateY) != 1)
+                        {
+                            TransitionADSAnim(-1f, 1f);
+                        }
+                        //_animator.SetBool(_animIDRightStrafe, true);
+                    }
+
+                    if (_input.move.y == -1)
+                    {
+                        if (_animator.GetFloat(_animIDADSStateX) != -1 && _animator.GetFloat(_animIDADSStateY) != -1)
+                        {
+                            TransitionADSAnim(-1f, -1f);
+                        }
+                        //_animator.SetBool(_animIDWalkBackwards, true);
+                    }
+
+                    if (_input.move.y == 1)
+                    {
+                        if (_animator.GetFloat(_animIDADSStateX) != 1 && _animator.GetFloat(_animIDADSStateY) != -1)
+                        {
+                            TransitionADSAnim(1f, -1f);
+                        }
+                    }
+                }
             }
+        }
+
+        void TransitionADSAnim(float newStateX, float newStateY) 
+        {
+            float rateX = 1.0f / MathF.Abs(_animator.GetFloat(_animIDADSStateX) - newStateX) * 10;
+            float rateY = 1.0f / MathF.Abs(_animator.GetFloat(_animIDADSStateY) - newStateX) * 10;
+            float tX = 0.0f;
+            float tY = 0.0f;
+
+            tX += Time.deltaTime * rateX;
+            tY += Time.deltaTime * rateY;
+
+            float lerpStateX = Mathf.Lerp(_animator.GetFloat(_animIDADSStateX), newStateX, tX);
+            float lerpStateY = Mathf.Lerp(_animator.GetFloat(_animIDADSStateY), newStateY, tY);
+            
+            _animator.SetFloat(_animIDADSStateX, lerpStateX);
+            _animator.SetFloat(_animIDADSStateY, lerpStateY);
+
+            Debug.Log(lerpStateX + ", "+ lerpStateY);
         }
 
         private void Crouch() 
         {
             if (_input.crouch)
             {
-                StartCoroutine(ProcessCrouchCam());
                 _animator.SetBool(_animIDCrouching, true);
 
             }
             else
             {
-                StartCoroutine(ProcessUncrouchCam());
                 _animator.SetBool(_animIDCrouching, false);
             }
         }
@@ -409,45 +523,6 @@ namespace StarterAssets
             return Mathf.Clamp(lfAngle, lfMin, lfMax);
         }
 
-        /*
-        public bool GetCrouchState() { return _input.crouch; }
-        public bool GetStuckToWallX() { return stuckToWallX; }
-        public bool GetStuckToWallY() { return stuckToWallY; }
-        public bool GetStuckToWallZ() { return stuckToWallZ; }
-
-        public void SetStuckToWallX(bool newValue) { stuckToWallX = newValue; }
-        public void SetStuckToWallY(bool newValue) { stuckToWallY = newValue; }
-        public void SetStuckToWallZ(bool newValue) { stuckToWallZ = newValue; }
-        */
-
-        IEnumerator ProcessCrouchCam() 
-        {
-            float rate = 1.0f / Vector3.Distance(CinemachineCameraTarget.transform.position, crouchCameraTransform.position) * 10;
-            float t = 0.0f;
-
-            while (t < 1.0f) 
-            {
-                t += Time.deltaTime * rate;
-                CinemachineCameraTarget.transform.position = Vector3.Lerp(CinemachineCameraTarget.transform.position, crouchCameraTransform.position, t);
-                yield return null;
-            }
-            yield return null;
-        }
-
-        IEnumerator ProcessUncrouchCam()
-        {
-            float rate = 1.0f / Vector3.Distance(CinemachineCameraTarget.transform.position, defaultCameraTransform.position) * 10;
-            float t = 0.0f;
-
-            while (t < 1.0f)
-            {
-                t += Time.deltaTime * rate;
-                CinemachineCameraTarget.transform.position = Vector3.Lerp(CinemachineCameraTarget.transform.position, defaultCameraTransform.position, t);
-                yield return null;
-            }
-            yield return null;
-        }
-
         private void OnDrawGizmosSelected()
         {
             Color transparentGreen = new Color(0.0f, 1.0f, 0.0f, 0.35f);
@@ -468,7 +543,7 @@ namespace StarterAssets
             {
                 if (FootstepAudioClips.Length > 0)
                 {
-                    var index = Random.Range(0, FootstepAudioClips.Length);
+                    var index = UnityEngine.Random.Range(0, FootstepAudioClips.Length);
                     AudioSource.PlayClipAtPoint(FootstepAudioClips[index], transform.TransformPoint(_controller.center), FootstepAudioVolume);
                 }
             }
