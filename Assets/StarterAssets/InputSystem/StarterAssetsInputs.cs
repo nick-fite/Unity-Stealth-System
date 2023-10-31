@@ -1,3 +1,5 @@
+using System;
+using System.Collections;
 using UnityEngine;
 #if ENABLE_INPUT_SYSTEM
 using UnityEngine.InputSystem;
@@ -23,8 +25,21 @@ namespace StarterAssets
 		public bool cursorLocked = true;
 		public bool cursorInputForLook = true;
 
+		private Animator _animator;
+		private int _animIDADSVelX;
+		private int _animIDADSVelY;
+		private int _animIDADS;
+
+        private void Start()
+        {
+			_animator = GetComponent<Animator>();
+			_animIDADSVelX = Animator.StringToHash("ADSVelX");
+			_animIDADSVelY = Animator.StringToHash("ADSVelY");
+			_animIDADS = Animator.StringToHash("ADS");
+        }
+
 #if ENABLE_INPUT_SYSTEM
-		public void OnMove(InputValue value)
+        public void OnMove(InputValue value)
 		{
 			MoveInput(value.Get<Vector2>());
 		}
@@ -69,7 +84,7 @@ namespace StarterAssets
         public void MoveInput(Vector2 newMoveDirection)
 		{
 			move = newMoveDirection;
-		} 
+        } 
 
 		public void LookInput(Vector2 newLookDirection)
 		{
@@ -109,6 +124,6 @@ namespace StarterAssets
 		{
 			Cursor.lockState = newState ? CursorLockMode.Locked : CursorLockMode.None;
 		}
-	}
+    }
 	
 }

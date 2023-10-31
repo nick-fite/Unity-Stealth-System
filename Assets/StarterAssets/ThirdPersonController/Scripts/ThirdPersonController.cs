@@ -115,8 +115,8 @@ namespace StarterAssets
         private int _animIDRightToBackwards;
         private int _animIDBackwardsToRight;
 
-        private int _animIDADSStateX;
-        private int _animIDADSStateY;
+        private int _animIDADSVelX;
+        private int _animIDADSVelY;
         private int _animIDADS;
 
 #if ENABLE_INPUT_SYSTEM 
@@ -217,8 +217,8 @@ namespace StarterAssets
             //_animIDLeftStrafe = Animator.StringToHash("LeftStrafe");
             //_animIDRightStrafe = Animator.StringToHash("RightStrafe");
             //_animIDWalkBackwards = Animator.StringToHash("WalkBackwards");
-            _animIDADSStateX = Animator.StringToHash("ADSStateX");
-            _animIDADSStateY = Animator.StringToHash("ADSStateY");
+            _animIDADSVelX = Animator.StringToHash("ADSVelX");
+            _animIDADSVelY = Animator.StringToHash("ADSVelY");
             _animIDADS = Animator.StringToHash("ADS");
         }
 
@@ -239,6 +239,11 @@ namespace StarterAssets
 
         private void CameraRotation()
         {
+            if (_input.ads)
+            {
+                transform.rotation = Quaternion.Euler(0.0f, _mainCamera.transform.rotation.eulerAngles.y, 0.0f);
+            }
+            
             // if there is an input and camera position is not fixed
             if (_input.look.sqrMagnitude >= _threshold && !LockCameraPosition)
             {
@@ -261,7 +266,7 @@ namespace StarterAssets
         private void Move()
         {
             // set target speed based on move speed, sprint speed and if sprint is pressed
-            float targetSpeed = _input.sprint && !_input.crouch ? SprintSpeed : MoveSpeed;
+            float targetSpeed = _input.sprint && !_input.crouch && !_input.ads ? SprintSpeed : MoveSpeed;
 
             // a simplistic acceleration and deceleration designed to be easy to remove, replace, or iterate upon
 
@@ -302,8 +307,8 @@ namespace StarterAssets
             // if there is a move input rotate player when the player is moving
             if (_input.move != Vector2.zero)
             {
-                if (!_input.ads)
-                {
+                //if (!_input.ads)
+                //{
                     _targetRotation = Mathf.Atan2(inputDirection.x, inputDirection.z) * Mathf.Rad2Deg +
                                       _mainCamera.transform.eulerAngles.y;
                     float rotation = Mathf.SmoothDampAngle(transform.eulerAngles.y, _targetRotation, ref _rotationVelocity,
@@ -311,8 +316,8 @@ namespace StarterAssets
 
                     // rotate to face input direction relative to camera position
                     transform.rotation = Quaternion.Euler(0.0f, rotation, 0.0f);
-                }
-                else
+                //}
+                /*else
                 {
                     _targetRotation = Mathf.Atan2(inputDirection.x, inputDirection.z) * Mathf.Rad2Deg +
                                          _mainCamera.transform.eulerAngles.y;
@@ -320,7 +325,7 @@ namespace StarterAssets
 
                     // rotate to face input direction relative to camera position
                     transform.rotation = Quaternion.Euler(0.0f, rotation, 0.0f);
-                }
+                }*/
             }
 
             Vector3 targetDirection = Quaternion.Euler(0.0f, _targetRotation, 0.0f) * Vector3.forward;
@@ -363,7 +368,8 @@ namespace StarterAssets
             }
 
             _controller.Move(movement);
-            
+            //_animator.SetBool(_animIDADS, true);
+
             // update animator if using character
             if (_hasAnimator)
             {
@@ -373,48 +379,17 @@ namespace StarterAssets
                     _animator.SetFloat(_animIDMotionSpeed, inputMagnitude);
                     _animator.SetBool(_animIDADS, false);
                 }
-                else
+                else 
                 {
-                    //Debug.Log(_animator.GetFloat(_animIDADSState));
                     _animator.SetBool(_animIDADS, true);
-                    if (_input.move.x == -1)
-                    {
-                        if (_animator.GetFloat(_animIDADSStateX) != 1 && _animator.GetFloat(_animIDADSStateY) != 1)
-                        {
-                            TransitionADSAnim(1f, 1f);
-                        }
-                        //_animator.SetBool(_animIDLeftStrafe, true);
-                    }
-
-                    if (_input.move.x == 1)
-                    {
-                        if (_animator.GetFloat(_animIDADSStateX) != -1 && _animator.GetFloat(_animIDADSStateY) != 1)
-                        {
-                            TransitionADSAnim(-1f, 1f);
-                        }
-                        //_animator.SetBool(_animIDRightStrafe, true);
-                    }
-
-                    if (_input.move.y == -1)
-                    {
-                        if (_animator.GetFloat(_animIDADSStateX) != -1 && _animator.GetFloat(_animIDADSStateY) != -1)
-                        {
-                            TransitionADSAnim(-1f, -1f);
-                        }
-                        //_animator.SetBool(_animIDWalkBackwards, true);
-                    }
-
-                    if (_input.move.y == 1)
-                    {
-                        if (_animator.GetFloat(_animIDADSStateX) != 1 && _animator.GetFloat(_animIDADSStateY) != -1)
-                        {
-                            TransitionADSAnim(1f, -1f);
-                        }
-                    }
+                    _animator.SetFloat(_animIDADSVelX, Mathf.Lerp(_animator.GetFloat(_animIDADSVelX), _input.move.x, Time.deltaTime * 10));
+                    _animator.SetFloat(_animIDADSVelY, Mathf.Lerp(_animator.GetFloat(_animIDADSVelY), _input.move.y, Time.deltaTime * 10));
+                    //_animator.SetFloat(_animIDMotionSpeed, inputMagnitude);
                 }
             }
         }
 
+        /*
         void TransitionADSAnim(float newStateX, float newStateY) 
         {
             float rateX = 1.0f / MathF.Abs(_animator.GetFloat(_animIDADSStateX) - newStateX) * 10;
@@ -433,6 +408,7 @@ namespace StarterAssets
 
             Debug.Log(lerpStateX + ", "+ lerpStateY);
         }
+        */
 
         private void Crouch() 
         {
