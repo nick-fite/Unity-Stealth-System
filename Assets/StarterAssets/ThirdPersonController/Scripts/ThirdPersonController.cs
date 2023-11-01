@@ -1,9 +1,14 @@
-﻿using System;
+﻿using Cinemachine;
+using Cinemachine.Utility;
+using System;
 using System.Collections;
+using System.Runtime.CompilerServices;
+using Unity.Mathematics;
 using Unity.VisualScripting;
 using UnityEngine;
 #if ENABLE_INPUT_SYSTEM 
 using UnityEngine.InputSystem;
+using UnityEngine.InputSystem.XR;
 #endif
 
 /* Note: animations are called via the controller for both the character and capsule using animator null checks
@@ -102,19 +107,6 @@ namespace StarterAssets
         private int _animIDMotionSpeed;
         private int _animIDCrouching;
 
-        private int _animIDIdleToRight;
-        private int _animIDRightToIdle;
-        private int _animIDIdleToLeft;
-        private int _animIDLeftToIdle;
-        private int _animIDIdleToBackwards;
-        private int _animIDBackwardsToIdle;
-        private int _animIDBackwardsToLeft;
-        private int _animIDLeftToBackwards;
-        private int _animIDLeftToRight;
-        private int _animIDRightToLeft;
-        private int _animIDRightToBackwards;
-        private int _animIDBackwardsToRight;
-
         private int _animIDADSVelX;
         private int _animIDADSVelY;
         private int _animIDADS;
@@ -131,18 +123,18 @@ namespace StarterAssets
 
         private bool _hasAnimator;
 
-        /*
-        private bool stuckToWallX { get; set; }
-        private bool stuckToWallY { get; set; }
-        private bool stuckToWallZ { get; set; }
-        */
-
-        private WallDetection wallDectection;
-
         [Header("Camera")]
-        [SerializeField] private Camera PlayerCam;
-        [SerializeField] private Transform defaultCameraTransform;
-        [SerializeField] private Transform crouchCameraTransform;
+        [SerializeField] private GameObject PlayerCam;
+        [SerializeField] private float AimFOV;
+        [SerializeField] private float defualtFOV;
+        [SerializeField] private Transform transformCrouchCameraPos;
+        [SerializeField] private Transform transformDefaultCameraPos;
+
+        [Header("Gun")]
+        [SerializeField] private GameObject gun;
+        [SerializeField] private GameObject leftShoulder;
+        [SerializeField] private GameObject rightShoulder;
+
 
         private bool IsCurrentDeviceMouse
         {
@@ -172,7 +164,7 @@ namespace StarterAssets
             //stuckToWallY = false;
             //stuckToWallZ = false;
 
-            wallDectection = GetComponent<WallDetection>();
+            //wallDectection = GetComponent<WallDetection>();
             _cinemachineTargetYaw = CinemachineCameraTarget.transform.rotation.eulerAngles.y;
             
             _hasAnimator = TryGetComponent(out _animator);
@@ -195,6 +187,8 @@ namespace StarterAssets
         {
             _hasAnimator = TryGetComponent(out _animator);
 
+            Shoot();
+            ADS();
             Crouch();
             JumpAndGravity();
             GroundedCheck();
@@ -214,9 +208,7 @@ namespace StarterAssets
             _animIDFreeFall = Animator.StringToHash("FreeFall");
             _animIDMotionSpeed = Animator.StringToHash("MotionSpeed");
             _animIDCrouching = Animator.StringToHash("Crouch");
-            //_animIDLeftStrafe = Animator.StringToHash("LeftStrafe");
-            //_animIDRightStrafe = Animator.StringToHash("RightStrafe");
-            //_animIDWalkBackwards = Animator.StringToHash("WalkBackwards");
+
             _animIDADSVelX = Animator.StringToHash("ADSVelX");
             _animIDADSVelY = Animator.StringToHash("ADSVelY");
             _animIDADS = Animator.StringToHash("ADS");
@@ -330,33 +322,11 @@ namespace StarterAssets
 
             Vector3 targetDirection = Quaternion.Euler(0.0f, _targetRotation, 0.0f) * Vector3.forward;
 
-            
+
             Vector3 movement = targetDirection.normalized * (_speed * Time.deltaTime) +
                                  new Vector3(0.0f, _verticalVelocity, 0.0f) * Time.deltaTime;
-            /*
-            if (_input.crouch)
-            {
-                if (stuckToWallX)
-                {
-                    _controller.Move(new Vector3(movement.x, 0, 0));
-                }
-                else if (stuckToWallY)
-                {
-                    _controller.Move(new Vector3(0, movement.y, 0));
-                }
-                else if (stuckToWallZ)
-                {
-                    _controller.Move(new Vector3(0, 0, movement.z));
-                }
-                else
-                {
-                    _controller.Move(movement);
-                }
-            }
-            else { _controller.Move(movement); }*/
 
-
-            if (_input.move != Vector2.zero) {
+            /*if (_input.move != Vector2.zero) {
                 if (wallDectection.GetLeftHit())
                 {
                     movement += -transform.right * .0003f;
@@ -365,10 +335,9 @@ namespace StarterAssets
                 {
                     movement += transform.right * .0003f;
                 }
-            }
+            }*/
 
             _controller.Move(movement);
-            //_animator.SetBool(_animIDADS, true);
 
             // update animator if using character
             if (_hasAnimator)
@@ -384,42 +353,56 @@ namespace StarterAssets
                     _animator.SetBool(_animIDADS, true);
                     _animator.SetFloat(_animIDADSVelX, Mathf.Lerp(_animator.GetFloat(_animIDADSVelX), _input.move.x, Time.deltaTime * 10));
                     _animator.SetFloat(_animIDADSVelY, Mathf.Lerp(_animator.GetFloat(_animIDADSVelY), _input.move.y, Time.deltaTime * 10));
-                    //_animator.SetFloat(_animIDMotionSpeed, inputMagnitude);
                 }
             }
         }
-
-        /*
-        void TransitionADSAnim(float newStateX, float newStateY) 
-        {
-            float rateX = 1.0f / MathF.Abs(_animator.GetFloat(_animIDADSStateX) - newStateX) * 10;
-            float rateY = 1.0f / MathF.Abs(_animator.GetFloat(_animIDADSStateY) - newStateX) * 10;
-            float tX = 0.0f;
-            float tY = 0.0f;
-
-            tX += Time.deltaTime * rateX;
-            tY += Time.deltaTime * rateY;
-
-            float lerpStateX = Mathf.Lerp(_animator.GetFloat(_animIDADSStateX), newStateX, tX);
-            float lerpStateY = Mathf.Lerp(_animator.GetFloat(_animIDADSStateY), newStateY, tY);
-            
-            _animator.SetFloat(_animIDADSStateX, lerpStateX);
-            _animator.SetFloat(_animIDADSStateY, lerpStateY);
-
-            Debug.Log(lerpStateX + ", "+ lerpStateY);
-        }
-        */
 
         private void Crouch() 
         {
             if (_input.crouch)
             {
                 _animator.SetBool(_animIDCrouching, true);
-
+                CinemachineCameraTarget.transform.rotation = transformCrouchCameraPos.rotation;
+                CinemachineCameraTarget.transform.position = transformCrouchCameraPos.position;
             }
             else
             {
                 _animator.SetBool(_animIDCrouching, false);
+                CinemachineCameraTarget.transform.rotation = transformCrouchCameraPos.rotation;
+                CinemachineCameraTarget.transform.position = transformDefaultCameraPos.position;
+            }
+        }
+
+        public void ADS()
+        {
+            if (_input.ads)
+            {
+                Ray ray = Camera.main.ViewportPointToRay(new Vector3(0.5f, 0.5f, 0));
+                //Ray ray = new Ray(CinemachineCameraTarget.transform.position, CinemachineCameraTarget.transform.forward);
+                Debug.DrawRay(ray.origin, ray.direction);
+
+                RaycastHit hit;
+                if (Physics.Raycast(ray, out hit))
+                {
+                    gun.transform.LookAt(hit.point);
+                }
+            }
+        }
+
+        public void Shoot()
+        {
+            if (_input.fire && !_input.ads) {
+                transform.rotation = new Quaternion(transform.rotation.x, _mainCamera.transform.rotation.y, transform.rotation.z, transform.rotation.w);
+                
+                Ray ray = Camera.main.ViewportPointToRay(new Vector3(0.5f, 0.5f, 0));
+                //Ray ray = new Ray(CinemachineCameraTarget.transform.position, CinemachineCameraTarget.transform.forward);
+                Debug.DrawRay(ray.origin, ray.direction);
+
+                RaycastHit hit;
+                if (Physics.Raycast(ray, out hit))
+                {
+                    gun.transform.LookAt(hit.point);
+                }
             }
         }
 

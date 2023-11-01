@@ -25,17 +25,14 @@ namespace StarterAssets
 		public bool cursorLocked = true;
 		public bool cursorInputForLook = true;
 
-		private Animator _animator;
-		private int _animIDADSVelX;
-		private int _animIDADSVelY;
-		private int _animIDADS;
+
+		private PlayerAnimator playerAnim;
+		private CharacterController controller;
 
         private void Start()
         {
-			_animator = GetComponent<Animator>();
-			_animIDADSVelX = Animator.StringToHash("ADSVelX");
-			_animIDADSVelY = Animator.StringToHash("ADSVelY");
-			_animIDADS = Animator.StringToHash("ADS");
+            playerAnim = GetComponent<PlayerAnimator>();
+			controller = GetComponent<CharacterController>();
         }
 
 #if ENABLE_INPUT_SYSTEM
@@ -104,15 +101,72 @@ namespace StarterAssets
 		private void CrouchInput(bool newCrouchState) 
 		{
 			crouch = newCrouchState;
-		}
+
+			if (newCrouchState)
+			{
+				if (ads)
+				{
+					StartCoroutine(playerAnim.crouchADSAim());
+				}
+				else
+				{
+                    StartCoroutine(playerAnim.crouchADSUnaim());
+                }
+            }
+			else
+			{
+				if (ads)
+				{
+                    StartCoroutine(playerAnim.ADSAnim());
+				}
+				else
+				{
+					playerAnim.UnSetArms();
+				}
+			}
+        }
 
         private void ADSInput(bool newADSState)
         {
 			ads = newADSState;
+			if (newADSState)
+			{
+				if (crouch)
+				{
+					StartCoroutine(playerAnim.crouchADSAim());
+				}
+				else 
+				{
+                    StartCoroutine(playerAnim.ADSAnim());
+                }
+                StartCoroutine(playerAnim.FOVZoomIn());
+            }
+			else
+			{
+				if (crouch)
+				{
+					StartCoroutine(playerAnim.crouchADSUnaim());
+				}
+				else
+				{
+					StartCoroutine(playerAnim.ADSUnaim());
+				}
+
+				StartCoroutine(playerAnim.FOVZoomOut());
+			}
         }
         private void FireInput(bool newFireState)
         {
 			fire = newFireState;
+
+            if (fire)
+            {
+				if (!ads)
+				{
+					playerAnim.SetShoot();
+				}
+				StartCoroutine(playerAnim.ShootAnim(ads));
+            }
         }
 
         private void OnApplicationFocus(bool hasFocus)

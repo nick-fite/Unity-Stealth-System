@@ -270,6 +270,17 @@
                 },
                 {
                     "name": "",
+                    "id": "43fad051-8f70-427e-a600-3eb82fb01743",
+                    "path": "<Keyboard>/leftBracket",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "ADS",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
                     "id": "278a615f-f5a4-43e8-ae29-93c22891e67b",
                     "path": "<Mouse>/leftButton",
                     "interactions": "",
