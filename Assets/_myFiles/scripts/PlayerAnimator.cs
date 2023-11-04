@@ -82,21 +82,21 @@ public class PlayerAnimator : MonoBehaviour
 
     public IEnumerator UnsetShootAnim()
     {
-            float rateLeft = 1.0f / Quaternion.Angle(leftShoulder.transform.rotation, leftShoulderDefault.rotation) * AimSpeed;
-            float rateRight = 1.0f / Quaternion.Angle(rightShoulder.transform.rotation, rightShoulderDefault.rotation) * AimSpeed;
+        float rateLeft = 1.0f / Quaternion.Angle(leftShoulder.transform.rotation, leftShoulderDefault.rotation) * AimSpeed;
+        float rateRight = 1.0f / Quaternion.Angle(rightShoulder.transform.rotation, rightShoulderDefault.rotation) * AimSpeed;
 
-            float tLeft = 0.0f;
-            float tRight = 0.0f;
+        float tLeft = 0.0f;
+        float tRight = 0.0f;
 
-            while (tLeft < 1.0f || tRight < 1.0f )
-            {
-                tLeft += Time.deltaTime * rateLeft;
-                tRight += Time.deltaTime * rateRight;
+        while (tLeft < 1.0f || tRight < 1.0f )
+        {
+            tLeft += Time.deltaTime * rateLeft;
+            tRight += Time.deltaTime * rateRight;
 
-                leftShoulder.transform.rotation = Quaternion.Lerp(leftShoulder.transform.rotation, leftShoulderDefault.rotation, tLeft);
-                rightShoulder.transform.rotation = Quaternion.Lerp(rightShoulder.transform.rotation, rightShoulderDefault.rotation, tRight);
-                yield return null;
-            }
+            leftShoulder.transform.rotation = Quaternion.Lerp(leftShoulder.transform.rotation, leftShoulderDefault.rotation, tLeft);
+            rightShoulder.transform.rotation = Quaternion.Lerp(rightShoulder.transform.rotation, rightShoulderDefault.rotation, tRight);
+            yield return null;
+        }
 
         yield return null;
     }
@@ -193,9 +193,8 @@ public class PlayerAnimator : MonoBehaviour
             yield return null;
         }
 
-        yield return new WaitForSeconds(0.2f);
+        yield return new WaitForSeconds(0.5f);
 
-        Debug.Log(fireList.Count);
         if (fireList.Count <= 1 && !ADS)
         {
             yield return UnsetShootAnim();

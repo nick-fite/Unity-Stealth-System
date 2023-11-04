@@ -9,6 +9,10 @@ TagManager:
   - StickableWallY
   - StickableWallZ
   - CameraRoot
+  - GRP
+  - EnemyPathPos
+  - TargetMask
+  - ObstructionMask
   layers:
   - Default
   - TransparentFX
@@ -17,8 +21,8 @@ TagManager:
   - Water
   - UI
   - Wall
-  - 
-  - 
+  - TargetMask
+  - ObstructionMask
   - 
   - 
   - 

@@ -362,13 +362,13 @@ namespace StarterAssets
             if (_input.crouch)
             {
                 _animator.SetBool(_animIDCrouching, true);
-                CinemachineCameraTarget.transform.rotation = transformCrouchCameraPos.rotation;
+                //CinemachineCameraTarget.transform.rotation = transformCrouchCameraPos.rotation;
                 CinemachineCameraTarget.transform.position = transformCrouchCameraPos.position;
             }
             else
             {
                 _animator.SetBool(_animIDCrouching, false);
-                CinemachineCameraTarget.transform.rotation = transformCrouchCameraPos.rotation;
+                //CinemachineCameraTarget.transform.rotation = transformCrouchCameraPos.rotation;
                 CinemachineCameraTarget.transform.position = transformDefaultCameraPos.position;
             }
         }
@@ -392,8 +392,6 @@ namespace StarterAssets
         public void Shoot()
         {
             if (_input.fire && !_input.ads) {
-                transform.rotation = new Quaternion(transform.rotation.x, _mainCamera.transform.rotation.y, transform.rotation.z, transform.rotation.w);
-                
                 Ray ray = Camera.main.ViewportPointToRay(new Vector3(0.5f, 0.5f, 0));
                 //Ray ray = new Ray(CinemachineCameraTarget.transform.position, CinemachineCameraTarget.transform.forward);
                 Debug.DrawRay(ray.origin, ray.direction);
@@ -401,7 +399,10 @@ namespace StarterAssets
                 RaycastHit hit;
                 if (Physics.Raycast(ray, out hit))
                 {
+                    transform.rotation = Quaternion.Euler(0.0f, _mainCamera.transform.rotation.eulerAngles.y, 0.0f);
                     gun.transform.LookAt(hit.point);
+
+
                 }
             }
         }
