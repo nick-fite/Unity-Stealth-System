@@ -11,8 +11,8 @@ TagManager:
   - CameraRoot
   - GRP
   - EnemyPathPos
-  - TargetMask
-  - ObstructionMask
+  - SearchWaypoint
+  - AlarmButton
   layers:
   - Default
   - TransparentFX

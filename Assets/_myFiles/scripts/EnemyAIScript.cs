@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using Unity.VisualScripting;
+using UnityEditor.Experimental.GraphView;
 using UnityEngine;
 using UnityEngine.AI;
 using UnityEngine.InputSystem.Controls;
@@ -10,12 +11,15 @@ using UnityEngine.InputSystem.Controls;
 [RequireComponent(typeof(FieldOfView))]
 public class EnemyAIScript : MonoBehaviour
 {
-    public List<GameObject> waypoints;
-    private int waypointIndex;
+    [SerializeField]EEnemyState EnemyState;
+
+    public List<GameObject> PatrolWaypoints;
+    public List<GameObject> searchWaypoints;
+    private int PatrolWaypointIndex;
+    private int SearchWaypointIndex;
 
     private GameObject playerRef;
     private Vector3 playerLastSeenPos;
-    private Vector3 prevPlayerLastSeenPos;
 
     private FieldOfView fov;
     
@@ -30,35 +34,40 @@ public class EnemyAIScript : MonoBehaviour
     public float curSpeed;
 
     public bool isCoward;
-    public Transform alarmPos;
+    private Transform alarmPos;
 
     private bool GetPlayerPosOnce;
     private bool FindingPlayer;
-    [SerializeField] private bool IsHostile;
+    private bool IsHostile;
+    private bool isInvestigateHostile;
+    [SerializeField]private bool hasInvestiagedLastPos;
 
     private void Start()
     {
+        searchWaypoints = searchWaypoints.OrderBy(x => Random.Range(0, 100)).ToList();
         playerRef = GameManager.m_Instance.GetPlayer();
 
         for (int i = 0; i < transform.parent.gameObject.transform.childCount; i++)
         {
             if (transform.parent.GetChild(i).gameObject.tag == "EnemyPathPos")
             {
-                waypoints.Add(transform.parent.GetChild(i).gameObject);
+                PatrolWaypoints.Add(transform.parent.GetChild(i).gameObject);
             }
         }
 
-        if (waypoints.Count <= 0)
+        if (PatrolWaypoints.Count <= 0)
         {
             Debug.LogError(this.name + ": There are no waypoints");
         }
         prevPosition = transform.position;
 
-        waypointIndex = 0;
+        PatrolWaypointIndex = 0;
 
         fov = GetComponent<FieldOfView>();
         enemy_NavMeshAgent = GetComponent<NavMeshAgent>();
         enemy_Animator = GetComponent<Animator>();
+
+        StartCoroutine(FOVRoutine());
     }
 
     private void Update()
@@ -71,7 +80,7 @@ public class EnemyAIScript : MonoBehaviour
             //enemy_Animator.SetFloat("MotionSpeed", curSpeed);
 
 
-            switch (fov.GetEnemyState())
+            switch (EnemyState)
             {
                 case EEnemyState.Suspicious:
                     Suspicious();
@@ -83,19 +92,20 @@ public class EnemyAIScript : MonoBehaviour
                     Hostile();
                     break;
                 default:
-                    if (waypoints.Count > 0 && !IsHostile)
+                    if (PatrolWaypoints.Count > 0 && !IsHostile)
                     {
-                        float waypointDistance = Vector3.Distance(transform.position, waypoints[waypointIndex].transform.position);
-                        enemy_NavMeshAgent.destination = waypoints[waypointIndex].transform.position;
+                        PatrolWaypointIndex = GoToWaypoints(PatrolWaypoints, PatrolWaypointIndex);   
+                        /*float waypointDistance = Vector3.Distance(transform.position, PatrolWaypoints[PatrolWaypointIndex].transform.position);
+                        enemy_NavMeshAgent.destination = PatrolWaypoints[PatrolWaypointIndex].transform.position;
 
                         if (waypointDistance < 1f)
                         {
-                            waypointIndex++;
-                            if (waypointIndex >= waypoints.Count)
+                            PatrolWaypointIndex++;
+                            if (PatrolWaypointIndex >= PatrolWaypoints.Count)
                             {
-                                waypointIndex = 0;
+                                PatrolWaypointIndex = 0;
                             }
-                        }
+                        }*/
                     }
                     else if (IsHostile)
                     {
@@ -108,82 +118,116 @@ public class EnemyAIScript : MonoBehaviour
 
     private void Suspicious()
     {
-        if (!IsHostile)
+        if (!IsHostile && !isInvestigateHostile)
         {
             enemy_NavMeshAgent.speed = 2;
             if (!FindingPlayer && fov.GetCanSeePlayer())
             {
-                Debug.Log("GetPlayerPos");
                 StartCoroutine(GetPlayerPos());
             }
             if (Vector3.Distance(transform.position, playerLastSeenPos) < 1f)
             {
-                Debug.Log("waitForDefault");
-                StartCoroutine(WaitBeforeDefault());
+                 StartCoroutine(WaitBeforeDefault());
             }
         }
-        else
+        else if (IsHostile)
         {
             Hostile();
+        }
+        else if(isInvestigateHostile)
+        {
+            InvestigateHostile();
         }
     }
 
     private void Hostile()
     {
-        if (!isCoward)
-        {
-            if (fov.GetCanSeePlayer())
+        if (!isInvestigateHostile) {
+            if (!isCoward)
             {
-                enemy_NavMeshAgent.speed = 4;
-                IsHostile = true;
-                enemy_NavMeshAgent.destination = playerRef.transform.position;
+                if (fov.GetCanSeePlayer())
+                {
+                    enemy_NavMeshAgent.speed = 4;
+                    IsHostile = true;
+                    enemy_NavMeshAgent.destination = playerRef.transform.position;
 
+                }
+                else
+                {
+                    IsHostile = false;
+                    EnemyState = EEnemyState.InvestigateHostile;
+                    InvestigateHostile();
+                }
             }
             else
             {
-                IsHostile = false;
-                fov.SetEnemyState(EEnemyState.InvestigateHostile);
-                InvestigateHostile();
+                IsHostile = true;
+                enemy_NavMeshAgent.speed = 4;
+                enemy_NavMeshAgent.destination = alarmPos.position;
+                if (!GetPlayerPosOnce)
+                {
+                    playerLastSeenPos = playerRef.transform.position;
+                    GetPlayerPosOnce = true;
+                }
+                if (Vector3.Distance(transform.position, alarmPos.position) < 1f)
+                {
+                    Debug.Log("running in ai");
+                    EnemyManager.m_Instance.InvestigateHostileToDefault();
+                    GetPlayerPosOnce = false;
+                    isCoward = false;
+                    IsHostile = false;
+                    EnemyState = EEnemyState.InvestigateHostile;
+                    InvestigateHostile();
+                }
             }
-        }
-        else
-        {
-            IsHostile = true;
-            enemy_NavMeshAgent.speed = 4;
-            enemy_NavMeshAgent.destination = alarmPos.position;
-            if (!GetPlayerPosOnce)
-            {
-                playerLastSeenPos = playerRef.transform.position;
-                GetPlayerPosOnce = true;
-            }
-            Debug.Log(playerLastSeenPos);
-            if (Vector3.Distance(transform.position, alarmPos.position) < 1f) 
-            {
-                GetPlayerPosOnce = false;
-                isCoward = false;
-                IsHostile = false;
-                fov.SetEnemyState(EEnemyState.InvestigateHostile);
-                InvestigateHostile();
-            }
-        }
+        }else { InvestigateHostile(); }
     }
 
     private void InvestigateHostile()
     {
+        isInvestigateHostile = true;
         if (!fov.GetCanSeePlayer())
         {
-            enemy_NavMeshAgent.destination = playerLastSeenPos;
+            if (hasInvestiagedLastPos)
+            {
+                SearchWaypointIndex = GoToWaypoints(searchWaypoints, SearchWaypointIndex);
+            }
+            else
+            {
+                enemy_NavMeshAgent.destination = playerLastSeenPos;
+                if(Vector3.Distance(transform.position, playerLastSeenPos) < 1f) 
+                {
+                    hasInvestiagedLastPos = true;
+                }
+            }
         }
         else
         {
-            fov.SetEnemyState(EEnemyState.Hostile);
+            isInvestigateHostile = false;
+            EnemyState = EEnemyState.Hostile;
         }
+    }
+
+    private int GoToWaypoints(List<GameObject> waypoints, int index) 
+    {
+        float waypointDistance = Vector3.Distance(transform.position, waypoints[index].transform.position);
+        enemy_NavMeshAgent.destination = waypoints[index].transform.position;
+
+        if (waypointDistance < 1f)
+        {
+            index++;
+            if (index >= waypoints.Count)
+            {
+                index = 0;
+            }
+        }
+        return index;
     }
 
     IEnumerator WaitBeforeDefault() 
     {
         yield return new WaitForSeconds(2f);
-        fov.SetEnemyState(EEnemyState.Default);
+        EnemyState = EEnemyState.Default;
     }
 
     IEnumerator GetPlayerPos()
@@ -194,7 +238,6 @@ public class EnemyAIScript : MonoBehaviour
         float timeToWait = 2.0f;
         while (timeToWait >= 0.0f) 
         {
-            Debug.Log(timeToWait);
             timeToWait -= Time.deltaTime;
             if (Vector3.Distance(playerRef.transform.position, transform.position) < fov.GetRadiusSuspicious()) {
                 playerLastSeenPos = playerRef.transform.position;
@@ -204,7 +247,7 @@ public class EnemyAIScript : MonoBehaviour
 
         if (fov.GetCanSeePlayer())
         {
-            fov.SetEnemyState(EEnemyState.Hostile);
+            EnemyState = EEnemyState.Hostile;
             Hostile();
             yield return null;
         }
@@ -217,21 +260,40 @@ public class EnemyAIScript : MonoBehaviour
 
     IEnumerator CheckBeforeLeaving()
     {
-        /*float rate = (transform.rotation.y - 359) * 3f;
-
-        float t = 0f;
-        while (t < 1.0f)
-        {
-            t += Time.deltaTime * rate;
-            var rotY = Mathf.Lerp(transform.rotation.y, 359, Time.deltaTime * t);
-            transform.rotation = Quaternion.Euler(0, rotY, 0);
-            yield return null;
-        }*/
-
         yield return new WaitForSeconds(4f);
         FindingPlayer = false;
         yield return null;
     }
+
+    IEnumerator FOVRoutine()
+    {
+        EFOVState currentFOVState = EFOVState.Nothing;
+        while (true)
+        {
+            yield return new WaitForSeconds(0.2f);
+            
+            currentFOVState = fov.FieldOfViewCheck();
+            
+            switch (currentFOVState)
+            {
+                case EFOVState.Hostile:
+                    EnemyState = EEnemyState.Hostile;
+                    break;
+                case EFOVState.Suspicious:
+                    EnemyState = EEnemyState.Suspicious;
+                    break;
+                case EFOVState.Nothing:
+                    break;
+            }
+        }
+    }
+
+    public void SetAlarmPos(Transform pos) { alarmPos = pos; }
+    public void SetSearchWaypoints(List<GameObject> waypoints) { searchWaypoints = waypoints; }
+    public void SetIsCoward(bool cowardState) { isCoward = cowardState; }
+    public void SetEnemyState(EEnemyState newState) { EnemyState = newState; }
+    public void SetIsInvestigateHostile(bool newState) { isInvestigateHostile = newState; }
+    public void SetIsHostile(bool newState) { IsHostile = newState; }
 }
 
 public enum EEnemyState { Default, Suspicious, InvestigateHostile, Hostile}

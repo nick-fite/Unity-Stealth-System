@@ -7,7 +7,6 @@ public class FieldOfView : MonoBehaviour
     [SerializeField] private float radiusHostile;
     [SerializeField] private float radiusSuspicious;
     [Range(0, 360)][SerializeField] private float angle;
-    [SerializeField] private float timeBetweenChecks;
 
     //private GameObject playerRef;
 
@@ -16,26 +15,24 @@ public class FieldOfView : MonoBehaviour
 
     [SerializeField] private bool canSeePlayer;
 
-    [SerializeField] private EEnemyState enemyState;
 
     private void Start()
     {
         targetMask = LayerMask.GetMask("TargetMask");
         obstructionMask = LayerMask.GetMask("ObstructionMask");
-        enemyState = EEnemyState.Default;
-        StartCoroutine(FOVRoutine());
+        //StartCoroutine(FOVRoutine());
     }
 
-    IEnumerator FOVRoutine()
+    /*IEnumerator FOVRoutine()
     {
         while (true)
         {
-            yield return new WaitForSeconds(timeBetweenChecks);
+            yield return new WaitForSeconds(0.2f);
             FieldOfViewCheck();
         }
-    }
+    }*/
 
-    private void FieldOfViewCheck()
+    public EFOVState FieldOfViewCheck()
     {
         Collider[] hostileRangeCheck = Physics.OverlapSphere(transform.position, radiusHostile, targetMask);
         Collider[] suspiciousRangeCheck = Physics.OverlapSphere(transform.position, radiusSuspicious, targetMask);
@@ -57,11 +54,15 @@ public class FieldOfView : MonoBehaviour
 
         if ((suspicious && hostile) || hostile)
         {
-            enemyState = EEnemyState.Hostile;
+            return EFOVState.Hostile;
         }
         else if (suspicious && !hostile)
         {
-            enemyState = EEnemyState.Suspicious;
+            return EFOVState.Suspicious;
+        }
+        else
+        {
+            return EFOVState.Nothing;
         }
     }
 
@@ -89,6 +90,6 @@ public class FieldOfView : MonoBehaviour
     public float GetRadiusHostile() { return radiusHostile; }
     public float GetRadiusSuspicious() { return radiusSuspicious; }
     public bool GetCanSeePlayer() { return canSeePlayer; }
-    public EEnemyState GetEnemyState() { return enemyState; }
-    public void SetEnemyState(EEnemyState state) { enemyState = state; }
 }
+
+public enum EFOVState {Hostile, Suspicious, Nothing };
