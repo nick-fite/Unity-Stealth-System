@@ -63,7 +63,16 @@
                     "name": "Fire",
                     "type": "PassThrough",
                     "id": "81cec2e2-a14f-4f7b-85be-243e221e49bf",
-                    "expectedControlType": "",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                },
+                {
+                    "name": "Silencer",
+                    "type": "PassThrough",
+                    "id": "674ced7b-fc35-4e06-a9c7-b6626502c21b",
+                    "expectedControlType": "Button",
                     "processors": "",
                     "interactions": "",
                     "initialStateCheck": false
@@ -270,23 +279,23 @@
                 },
                 {
                     "name": "",
-                    "id": "43fad051-8f70-427e-a600-3eb82fb01743",
-                    "path": "<Keyboard>/leftBracket",
-                    "interactions": "",
-                    "processors": "",
-                    "groups": "",
-                    "action": "ADS",
-                    "isComposite": false,
-                    "isPartOfComposite": false
-                },
-                {
-                    "name": "",
                     "id": "278a615f-f5a4-43e8-ae29-93c22891e67b",
                     "path": "<Mouse>/leftButton",
                     "interactions": "",
                     "processors": "",
                     "groups": "",
                     "action": "Fire",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "597b23bf-95dc-4fdd-82ae-054186617bbc",
+                    "path": "<Keyboard>/f",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Silencer",
                     "isComposite": false,
                     "isPartOfComposite": false
                 }

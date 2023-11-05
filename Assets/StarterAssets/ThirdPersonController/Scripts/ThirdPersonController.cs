@@ -134,6 +134,9 @@ namespace StarterAssets
         [SerializeField] private GameObject gun;
         [SerializeField] private GameObject leftShoulder;
         [SerializeField] private GameObject rightShoulder;
+        [SerializeField] private ParticleSystem MuzzleFlash;
+
+        private bool hasShot;
 
 
         private bool IsCurrentDeviceMouse
@@ -181,6 +184,12 @@ namespace StarterAssets
             // reset our timeouts on start
             _jumpTimeoutDelta = JumpTimeout;
             _fallTimeoutDelta = FallTimeout;
+
+            hasShot = false;
+
+            MuzzleFlash.Stop();
+            var main = MuzzleFlash.main;
+            main.duration = 1f;
         }
 
         private void Update()
@@ -391,20 +400,42 @@ namespace StarterAssets
 
         public void Shoot()
         {
-            if (_input.fire && !_input.ads) {
-                Ray ray = Camera.main.ViewportPointToRay(new Vector3(0.5f, 0.5f, 0));
-                //Ray ray = new Ray(CinemachineCameraTarget.transform.position, CinemachineCameraTarget.transform.forward);
-                Debug.DrawRay(ray.origin, ray.direction);
-
-                RaycastHit hit;
-                if (Physics.Raycast(ray, out hit))
+            if (_input.fire)
+            {
+                if (!hasShot)
                 {
-                    transform.rotation = Quaternion.Euler(0.0f, _mainCamera.transform.rotation.eulerAngles.y, 0.0f);
-                    gun.transform.LookAt(hit.point);
+                    hasShot = true;
+                    Ray ray = Camera.main.ViewportPointToRay(new Vector3(0.5f, 0.5f, 0));
+                    //Ray ray = new Ray(CinemachineCameraTarget.transform.position, CinemachineCameraTarget.transform.forward);
+                    Debug.DrawRay(ray.origin, ray.direction);
 
+                    RaycastHit hit;
+                    if (Physics.Raycast(ray, out hit))
+                    {
+                        transform.rotation = Quaternion.Euler(0.0f, _mainCamera.transform.rotation.eulerAngles.y, 0.0f);
+                        gun.transform.LookAt(hit.point);
 
+                        Debug.Log(hit.collider.gameObject.tag);
+
+                        if (hit.collider.gameObject.tag == "Enemy")
+                        {
+                            EnemyAIScript AI;
+                            if (hit.collider.gameObject.TryGetComponent<EnemyAIScript>(out AI))
+                            {
+                                AI.SetHealth(AI.GetHealth() - 5);
+                                Debug.Log(AI.GetHealth());
+                            }
+
+                        }
+                    }
+                    MuzzleFlash.Play();
                 }
             }
+            else 
+            {
+                hasShot = false;
+            }
+
         }
 
         private void JumpAndGravity()

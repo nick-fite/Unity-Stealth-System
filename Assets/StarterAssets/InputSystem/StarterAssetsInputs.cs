@@ -17,6 +17,7 @@ namespace StarterAssets
 		public bool crouch;
 		public bool ads;
 		public bool fire;
+		public bool silencer;
 
 		[Header("Movement Settings")]
 		public bool analogMovement;
@@ -25,14 +26,23 @@ namespace StarterAssets
 		public bool cursorLocked = true;
 		public bool cursorInputForLook = true;
 
+		[Header("Gun Particle Pos")]
+		[SerializeField] ParticleSystem MuzzleParticleSystem;
+		[SerializeField] GameObject NoSilencerPos;
+        [SerializeField] GameObject SilencerPos;
 
-		private PlayerAnimator playerAnim;
-		private CharacterController controller;
+		[SerializeField]private GameObject SilencerObj;
 
+		private bool CanFire;
+
+        private PlayerAnimator playerAnim;
+
+		
         private void Start()
         {
+			CanFire = true;
+			silencer = false;
             playerAnim = GetComponent<PlayerAnimator>();
-			controller = GetComponent<CharacterController>();
         }
 
 #if ENABLE_INPUT_SYSTEM
@@ -75,6 +85,11 @@ namespace StarterAssets
         {
 			FireInput(value.isPressed);
         }
+
+		public void OnSilencer(InputValue value) 
+		{
+			if (value.isPressed) { ToggleSilencer(); }
+		}
 #endif
 
 
@@ -106,7 +121,7 @@ namespace StarterAssets
 			{
 				if (ads)
 				{
-					StartCoroutine(playerAnim.crouchADSAim());
+					StartCoroutine(playerAnim.CrouchADSAim());
 				}
 				else
 				{
@@ -133,7 +148,7 @@ namespace StarterAssets
 			{
 				if (crouch)
 				{
-					StartCoroutine(playerAnim.crouchADSAim());
+					StartCoroutine(playerAnim.CrouchADSAim());
 				}
 				else 
 				{
@@ -158,16 +173,21 @@ namespace StarterAssets
         private void FireInput(bool newFireState)
         {
 			fire = newFireState;
-
-            if (fire)
-            {
+			if (fire)
+			{
 				if (!ads)
 				{
 					playerAnim.SetShoot();
 				}
 				StartCoroutine(playerAnim.ShootAnim(ads));
-            }
+			}
         }
+
+		public void ToggleSilencer() 
+		{
+			silencer = !silencer;
+            SilencerObj.SetActive(silencer);
+		}
 
         private void OnApplicationFocus(bool hasFocus)
 		{

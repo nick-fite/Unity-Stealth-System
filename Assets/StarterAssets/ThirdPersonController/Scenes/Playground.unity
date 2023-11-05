@@ -356,7 +356,7 @@ MonoBehaviour:
   - {fileID: 3852850}
   - {fileID: 1016385373}
   - {fileID: 789871718}
-  WaitBeforePatrol: 30
+  WaitBeforePatrol: 195.9
 --- !u!1 &874605735
 GameObject:
   m_ObjectHideFlags: 0
@@ -813,7 +813,7 @@ Transform:
   m_GameObject: {fileID: 1226139838}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -6.06, y: 0.58, z: 20.26}
+  m_LocalPosition: {x: -21.52, y: 0.58, z: 20.26}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -1758,12 +1758,17 @@ PrefabInstance:
     - target: {fileID: 4530757133177272706, guid: 09aade0ecefd01e4b8f7661acf64f5c2,
         type: 3}
       propertyPath: m_LocalPosition.x
-      value: 15.4
+      value: -17.97
+      objectReference: {fileID: 0}
+    - target: {fileID: 4530757133177272706, guid: 09aade0ecefd01e4b8f7661acf64f5c2,
+        type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 4530757133177272706, guid: 09aade0ecefd01e4b8f7661acf64f5c2,
         type: 3}
       propertyPath: m_LocalPosition.z
-      value: 7.2
+      value: 18.03
       objectReference: {fileID: 0}
     - target: {fileID: 4530757133177272706, guid: 09aade0ecefd01e4b8f7661acf64f5c2,
         type: 3}

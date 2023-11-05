@@ -42,6 +42,15 @@ public class EnemyAIScript : MonoBehaviour
     private bool isInvestigateHostile;
     [SerializeField]private bool hasInvestiagedLastPos;
 
+    private float Health;
+    private Rigidbody[] RagDollRigidbodies;
+
+    private void Awake()
+    {
+        RagDollRigidbodies = GetComponentsInChildren<Rigidbody>();
+        DisableRagDoll();
+    }
+
     private void Start()
     {
         searchWaypoints = searchWaypoints.OrderBy(x => Random.Range(0, 100)).ToList();
@@ -66,12 +75,21 @@ public class EnemyAIScript : MonoBehaviour
         fov = GetComponent<FieldOfView>();
         enemy_NavMeshAgent = GetComponent<NavMeshAgent>();
         enemy_Animator = GetComponent<Animator>();
+        Health = 10f;
 
         StartCoroutine(FOVRoutine());
     }
 
     private void Update()
     {
+        if (Health <= 0)
+        {
+            enemy_Animator.enabled = false;
+            enemy_NavMeshAgent.enabled = false;
+            EnableRagDoll();
+            startAI = false;
+            StartCoroutine(DeleteAfterWaiting());
+        }
         if (startAI) {
             Vector3 curMove = transform.position - prevPosition;
             curSpeed = curMove.magnitude / Time.deltaTime;
@@ -171,8 +189,7 @@ public class EnemyAIScript : MonoBehaviour
                 }
                 if (Vector3.Distance(transform.position, alarmPos.position) < 1f)
                 {
-                    Debug.Log("running in ai");
-                    EnemyManager.m_Instance.InvestigateHostileToDefault();
+                    //EnemyManager.m_Instance.InvestigateHostileToDefault();
                     GetPlayerPosOnce = false;
                     isCoward = false;
                     IsHostile = false;
@@ -274,17 +291,44 @@ public class EnemyAIScript : MonoBehaviour
             
             currentFOVState = fov.FieldOfViewCheck();
             
+            //test out if statements :p
             switch (currentFOVState)
             {
                 case EFOVState.Hostile:
-                    EnemyState = EEnemyState.Hostile;
+                    //if (EnemyState != EEnemyState.InvestigateHostile) {
+                        EnemyState = EEnemyState.Hostile;
+                    //}
                     break;
                 case EFOVState.Suspicious:
-                    EnemyState = EEnemyState.Suspicious;
+                    //if (EnemyState != EEnemyState.Hostile || EnemyState != EEnemyState.InvestigateHostile) { 
+                        EnemyState = EEnemyState.Suspicious;
+                    //}
                     break;
                 case EFOVState.Nothing:
                     break;
             }
+        }
+    }
+
+    IEnumerator DeleteAfterWaiting()
+    {
+        yield return new WaitForSeconds(10f);
+        Destroy(this.gameObject);
+    }
+
+    private void DisableRagDoll() 
+    {
+        foreach (Rigidbody rb in RagDollRigidbodies)
+        {
+            rb.isKinematic = true;
+        }
+    }
+
+    private void EnableRagDoll()
+    {
+        foreach (Rigidbody rb in RagDollRigidbodies)
+        {
+            rb.isKinematic = false;
         }
     }
 
@@ -294,6 +338,8 @@ public class EnemyAIScript : MonoBehaviour
     public void SetEnemyState(EEnemyState newState) { EnemyState = newState; }
     public void SetIsInvestigateHostile(bool newState) { isInvestigateHostile = newState; }
     public void SetIsHostile(bool newState) { IsHostile = newState; }
+    public void SetHealth(float newHealth) { Health = newHealth; }
+    public float GetHealth() { return Health; }
 }
 
 public enum EEnemyState { Default, Suspicious, InvestigateHostile, Hostile}
