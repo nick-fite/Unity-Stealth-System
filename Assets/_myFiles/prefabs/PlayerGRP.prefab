@@ -1842,10 +1842,8 @@ MonoBehaviour:
   Detail: {fileID: 8358236078704824822}
   DefaultDetailPos: {fileID: 5923240950590279037}
   ShootingDetailPos: {fileID: 3427270992098292231}
-  GunAnimSpeed: 3.98
+  GunAnimSpeed: 4.02
   AimSpeed: 100
-  CurrentAnimState: 6
-  ZoomState: 2
 --- !u!1 &4622186587057916428
 GameObject:
   m_ObjectHideFlags: 0

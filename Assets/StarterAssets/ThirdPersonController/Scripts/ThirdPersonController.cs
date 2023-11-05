@@ -136,6 +136,8 @@ namespace StarterAssets
         [SerializeField] private GameObject rightShoulder;
         [SerializeField] private ParticleSystem MuzzleFlash;
 
+        [SerializeField] private float health;
+
         private bool hasShot;
 
 
@@ -190,6 +192,8 @@ namespace StarterAssets
             MuzzleFlash.Stop();
             var main = MuzzleFlash.main;
             main.duration = 1f;
+
+            health = 20f;
         }
 
         private void Update()
@@ -202,6 +206,8 @@ namespace StarterAssets
             JumpAndGravity();
             GroundedCheck();
             Move();
+
+            if (health <= 0) { Debug.Log("dead"); }
         }
 
         private void LateUpdate()
@@ -420,7 +426,7 @@ namespace StarterAssets
                         if (hit.collider.gameObject.tag == "Enemy")
                         {
                             EnemyAIScript AI;
-                            if (hit.collider.gameObject.TryGetComponent<EnemyAIScript>(out AI))
+                            if (hit.collider.gameObject.TryGetComponent(out AI))
                             {
                                 AI.SetHealth(AI.GetHealth() - 5);
                                 Debug.Log(AI.GetHealth());
@@ -547,5 +553,8 @@ namespace StarterAssets
                 AudioSource.PlayClipAtPoint(LandingAudioClip, transform.TransformPoint(_controller.center), FootstepAudioVolume);
             }
         }
+
+        public void SetHealth(float newHealth) { health = newHealth; }
+        public float GetHealth() { return health; }
     }
 }

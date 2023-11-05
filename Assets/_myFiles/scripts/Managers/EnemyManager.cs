@@ -19,7 +19,7 @@ public class EnemyManager : MonoBehaviour
     [SerializeField] List<EnemyInfo> Enemies;
 
     [SerializeField] private List<GameObject> enemyGameobj;
-
+    
     [SerializeField] private GameObject alarmButton;
 
     [SerializeField]private List<GameObject> searchWaypoints;
@@ -31,6 +31,8 @@ public class EnemyManager : MonoBehaviour
 
     private bool PlayerHasBeenSeen;
     private bool WaitForNormalRunning;
+
+    private Vector3 LastSeenPos;
 
     private void Awake()
     {
@@ -71,31 +73,31 @@ public class EnemyManager : MonoBehaviour
     public void InvestigateHostileToDefault()
     {
         if (!WaitForNormalRunning) {
-            Debug.Log("running");
             StartCoroutine(WaitBeforeNormalPatrol());
         }
     }
 
     IEnumerator WaitBeforeNormalPatrol() 
     {
-        Debug.Log("runnin");
         WaitForNormalRunning = true;
         float timeToWait = WaitBeforePatrol;
         while (timeToWait > 0)
         {
+            Debug.Log(timeToWait);
             timeToWait -= Time.deltaTime;
             if (PlayerHasBeenSeen)
             {
                 timeToWait = WaitBeforePatrol;
             }
-            SetEnemiesState(EEnemyState.Default, false, false);
             yield return new WaitForSeconds(0.1f);
         }
+        SetEnemiesState(EEnemyState.Default, false, false);
         WaitForNormalRunning = false;
     }
 
     private void SetEnemiesState(EEnemyState newState, bool isHostile, bool isInvestigateHostile) 
     {
+        Debug.Log("setting state"); 
         
         foreach (GameObject obj in enemyGameobj)
         {
@@ -105,5 +107,12 @@ public class EnemyManager : MonoBehaviour
         }
     }
 
+    public void AlertAllEnemies() 
+    {
+        SetEnemiesState(EEnemyState.InvestigateHostile, true, true);
+    }
+
     public void SetPlayerHasBeenSeen(bool newState) { PlayerHasBeenSeen = newState; }
+    public void SetLastSeenPos(Vector3 newPos) { LastSeenPos = newPos; }
+    public Vector3 GetLastSeenPos() { return LastSeenPos; }
 }

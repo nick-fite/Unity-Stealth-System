@@ -5,13 +5,13 @@ using System.Collections.Generic;
 using Unity.Mathematics;
 using Unity.VisualScripting;
 using UnityEngine;
+using UnityEngine.Rendering;
 
 [RequireComponent(typeof(StarterAssetsInputs))]
 public class PlayerAnimator : MonoBehaviour
 {
     enum EAnimState {ADS, UnADS, CrouchADS, CrouchUnADS, Shoot, UnsetShoot, None }
     enum EZoomState { ZoomIn, ZoomOut, None}
-    enum ERecoilState { Shooting, ReturnToDefault, None}
     [Header("Left Shoulder")]
     [SerializeField] private Transform LeftShoulderDefault;
     [SerializeField] private Transform LeftShoulderADS;
@@ -51,18 +51,18 @@ public class PlayerAnimator : MonoBehaviour
 
     private EAnimState CurrentAnimState;
     private EZoomState ZoomState;
-    private ERecoilState RecoilState;
     private bool ADSNoArms;
 
     private List<bool> fireList;
+    List<bool> recoil;
 
     private void Start()
     {
         ZoomState = EZoomState.None;
         CurrentAnimState = EAnimState.None;
-        RecoilState = ERecoilState.None;
         ADSNoArms = false;
         fireList = new List<bool>();
+        recoil = new List<bool>();
     }
 
     public void SetShoot()
@@ -202,18 +202,21 @@ public class PlayerAnimator : MonoBehaviour
         yield return null;
     }
 
+
     public IEnumerator ShootAnim(bool ADS)
     {
         if (!ADS)
         {
             fireList.Add(true);
         }
-        
-        bool exitingShooting = false;
+
+        recoil.Add(true);
+        Debug.Log(recoil.Count);
+        bool exiting = false;
 
         float rateChamber = 1.0f / Vector3.Distance(Detail.transform.position, ShootingDetailPos.position) * GunAnimSpeed;
-        float rateLeftHand = 1.0f / Quaternion.Angle(LeftHand.transform.rotation, LeftHandShootingPos.transform.rotation) * AimSpeed;
-        float rateRightHand = 1.0f / Quaternion.Angle(RightHand.transform.rotation, RightHandShootingPos.transform.rotation) * AimSpeed;
+        float rateLeftHand = 1.0f / Quaternion.Angle(LeftHand.transform.rotation, LeftHandShootingPos.transform.rotation) * 300;
+        float rateRightHand = 1.0f / Quaternion.Angle(RightHand.transform.rotation, RightHandShootingPos.transform.rotation) * 300;
 
         float tChamber = 0.0f;
         float tLeftHand = 0.0f;
@@ -221,7 +224,7 @@ public class PlayerAnimator : MonoBehaviour
 
         while (tChamber < 1.0f || tLeftHand < 1.0f || tRightHand < 1.0f)
         {
-            if (RecoilState != ERecoilState.None) { exitingShooting = true; break; }
+            if (recoil.Count > 1) { exiting = true; break; }
             tChamber += Time.deltaTime * rateChamber;
             tLeftHand += Time.deltaTime * rateLeftHand;
             tRightHand += Time.deltaTime * rateRightHand;
@@ -232,13 +235,10 @@ public class PlayerAnimator : MonoBehaviour
             yield return null;
         }
 
-        if (!exitingShooting) {
-            RecoilState = ERecoilState.Shooting;
-            bool exitingReturnToDefault = false;
-
+        if (!exiting) {
             rateChamber = 1.0f / Vector3.Distance(Detail.transform.position, DefaultDetailPos.position) * GunAnimSpeed;
-            rateLeftHand = 1.0f / Quaternion.Angle(LeftHand.transform.rotation, LeftHandDefaultPos.transform.rotation) * AimSpeed;
-            rateRightHand = 1.0f / Quaternion.Angle(RightHand.transform.rotation, RightHandDefaultPos.transform.rotation) * AimSpeed;
+            rateLeftHand = 1.0f / Quaternion.Angle(LeftHand.transform.rotation, LeftHandDefaultPos.transform.rotation) * 300;
+            rateRightHand = 1.0f / Quaternion.Angle(RightHand.transform.rotation, RightHandDefaultPos.transform.rotation) * 300;
 
             tChamber = 0.0f;
             tLeftHand = 0.0f;
@@ -246,39 +246,35 @@ public class PlayerAnimator : MonoBehaviour
 
             while (tChamber < 1.0f || tLeftHand < 1.0f || tRightHand < 1.0f)
             {
-                if (RecoilState != ERecoilState.Shooting) { exitingReturnToDefault = true; break; }
-
+                if (recoil.Count > 1) { break; }
                 tChamber += Time.deltaTime * rateChamber;
                 tLeftHand += Time.deltaTime * rateLeftHand;
                 tRightHand += Time.deltaTime * rateRightHand;
-
 
                 Detail.transform.position = Vector3.Lerp(Detail.transform.position, DefaultDetailPos.position, tChamber);
                 LeftHand.transform.rotation = Quaternion.Lerp(LeftHand.transform.rotation, LeftHandDefaultPos.transform.rotation, tLeftHand);
                 RightHand.transform.rotation = Quaternion.Lerp(RightHand.transform.rotation, RightHandDefaultPos.transform.rotation, tRightHand);
                 yield return null;
             }
-            if (!exitingReturnToDefault) {
-                yield return new WaitForSeconds(0.5f);
-
-                //Preferably, I wouldn't have to check for that last thing, but if I don't do this the arms go down while player is zoomed in.
-                //Also, no need to pass literally all of the player object, this is a one time thing.
-                if (fireList.Count <= 1 && !ADS && !gameObject.GetComponent<StarterAssetsInputs>().ads)
-                {
-                    yield return UnsetShootAnim();
-                }
-
-                if (fireList.Count > 0)
-                {
-                    fireList.RemoveAt(fireList.Count - 1);
-                }
-
-                RecoilState = ERecoilState.None;
-
-                yield return null;
-            }
-            yield return null;
         }
+
+        recoil.RemoveAt(0);
+
+        yield return new WaitForSeconds(0.5f);
+
+        //Preferably, I wouldn't have to check for that last thing, but if I don't do this the arms go down while player is zoomed in.
+        //Also, no need to pass literally all of the player object, this is a one time thing.
+        if (fireList.Count <= 1 && !ADS && !gameObject.GetComponent<StarterAssetsInputs>().ads)
+        {
+            yield return UnsetShootAnim();
+        }
+
+        if (fireList.Count > 0)
+        {
+            fireList.RemoveAt(fireList.Count - 1);
+        }
+
+        yield return null;
     }
 
     public IEnumerator UnsetShootAnim()

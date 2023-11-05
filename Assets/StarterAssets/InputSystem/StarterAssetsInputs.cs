@@ -33,14 +33,11 @@ namespace StarterAssets
 
 		[SerializeField]private GameObject SilencerObj;
 
-		private bool CanFire;
-
         private PlayerAnimator playerAnim;
 
 		
         private void Start()
         {
-			CanFire = true;
 			silencer = false;
             playerAnim = GetComponent<PlayerAnimator>();
         }

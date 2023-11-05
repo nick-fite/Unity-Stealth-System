@@ -19,13 +19,14 @@ public class EnemyAIScript : MonoBehaviour
     private int SearchWaypointIndex;
 
     private GameObject playerRef;
-    private Vector3 playerLastSeenPos;
+    //private Vector3 playerLastSeenPos;
 
     private FieldOfView fov;
     
     private NavMeshAgent enemy_NavMeshAgent;
     
     private Animator enemy_Animator;
+    private EnemyAnimation enemyAnimation;
     
     private Vector3 prevPosition;
     
@@ -38,8 +39,8 @@ public class EnemyAIScript : MonoBehaviour
 
     private bool GetPlayerPosOnce;
     private bool FindingPlayer;
-    private bool IsHostile;
-    private bool isInvestigateHostile;
+    [SerializeField]private bool IsHostile;
+    [SerializeField] private bool isInvestigateHostile;
     [SerializeField]private bool hasInvestiagedLastPos;
 
     private float Health;
@@ -75,6 +76,7 @@ public class EnemyAIScript : MonoBehaviour
         fov = GetComponent<FieldOfView>();
         enemy_NavMeshAgent = GetComponent<NavMeshAgent>();
         enemy_Animator = GetComponent<Animator>();
+        enemyAnimation = GetComponent<EnemyAnimation>();
         Health = 10f;
 
         StartCoroutine(FOVRoutine());
@@ -86,6 +88,7 @@ public class EnemyAIScript : MonoBehaviour
         {
             enemy_Animator.enabled = false;
             enemy_NavMeshAgent.enabled = false;
+            enemyAnimation.SetContinueShooting(false);
             EnableRagDoll();
             startAI = false;
             StartCoroutine(DeleteAfterWaiting());
@@ -109,26 +112,18 @@ public class EnemyAIScript : MonoBehaviour
                 case EEnemyState.Hostile:
                     Hostile();
                     break;
+                case EEnemyState.None:
+                    break;
                 default:
-                    if (PatrolWaypoints.Count > 0 && !IsHostile)
+                    if (PatrolWaypoints.Count > 0 && !IsHostile && !isInvestigateHostile)
                     {
-                        PatrolWaypointIndex = GoToWaypoints(PatrolWaypoints, PatrolWaypointIndex);   
-                        /*float waypointDistance = Vector3.Distance(transform.position, PatrolWaypoints[PatrolWaypointIndex].transform.position);
-                        enemy_NavMeshAgent.destination = PatrolWaypoints[PatrolWaypointIndex].transform.position;
-
-                        if (waypointDistance < 1f)
-                        {
-                            PatrolWaypointIndex++;
-                            if (PatrolWaypointIndex >= PatrolWaypoints.Count)
-                            {
-                                PatrolWaypointIndex = 0;
-                            }
-                        }*/
+                        PatrolWaypointIndex = GoToWaypoints(PatrolWaypoints, PatrolWaypointIndex);
                     }
                     else if (IsHostile)
                     {
                         Hostile();
                     }
+                    else if (isInvestigateHostile) { InvestigateHostile(); }
                     break;
             }
         }
@@ -143,7 +138,7 @@ public class EnemyAIScript : MonoBehaviour
             {
                 StartCoroutine(GetPlayerPos());
             }
-            if (Vector3.Distance(transform.position, playerLastSeenPos) < 1f)
+            if (Vector3.Distance(transform.position, EnemyManager.m_Instance.GetLastSeenPos()) < 1f)
             {
                  StartCoroutine(WaitBeforeDefault());
             }
@@ -167,11 +162,13 @@ public class EnemyAIScript : MonoBehaviour
                 {
                     enemy_NavMeshAgent.speed = 4;
                     IsHostile = true;
-                    enemy_NavMeshAgent.destination = playerRef.transform.position;
+                    Attack();
 
                 }
                 else
                 {
+                    enemyAnimation.SetContinueShooting(false);
+                    StartCoroutine(enemyAnimation.LowerArms());
                     IsHostile = false;
                     EnemyState = EEnemyState.InvestigateHostile;
                     InvestigateHostile();
@@ -184,20 +181,37 @@ public class EnemyAIScript : MonoBehaviour
                 enemy_NavMeshAgent.destination = alarmPos.position;
                 if (!GetPlayerPosOnce)
                 {
-                    playerLastSeenPos = playerRef.transform.position;
+                    EnemyManager.m_Instance.SetLastSeenPos(playerRef.transform.position);
                     GetPlayerPosOnce = true;
                 }
                 if (Vector3.Distance(transform.position, alarmPos.position) < 1f)
                 {
-                    //EnemyManager.m_Instance.InvestigateHostileToDefault();
+                    EnemyManager.m_Instance.AlertAllEnemies();
+                    EnemyManager.m_Instance.InvestigateHostileToDefault();
                     GetPlayerPosOnce = false;
                     isCoward = false;
                     IsHostile = false;
-                    EnemyState = EEnemyState.InvestigateHostile;
-                    InvestigateHostile();
+                    //EnemyState = EEnemyState.InvestigateHostile;
+                    //InvestigateHostile();
                 }
             }
         }else { InvestigateHostile(); }
+    }
+
+    private void Attack()
+    {
+        if (Vector3.Distance(transform.position, playerRef.transform.position) < 10f)
+        {
+            enemy_NavMeshAgent.destination = transform.position;
+            transform.LookAt(playerRef.transform.position);
+            StartCoroutine(enemyAnimation.RaiseArms());
+        }
+        else
+        {
+            enemyAnimation.SetContinueShooting(false);
+            StartCoroutine(enemyAnimation.LowerArms());
+            enemy_NavMeshAgent.destination = playerRef.transform.position;
+        }
     }
 
     private void InvestigateHostile()
@@ -211,8 +225,8 @@ public class EnemyAIScript : MonoBehaviour
             }
             else
             {
-                enemy_NavMeshAgent.destination = playerLastSeenPos;
-                if(Vector3.Distance(transform.position, playerLastSeenPos) < 1f) 
+                enemy_NavMeshAgent.destination = EnemyManager.m_Instance.GetLastSeenPos();
+                if(Vector3.Distance(transform.position, EnemyManager.m_Instance.GetLastSeenPos()) < 1f) 
                 {
                     hasInvestiagedLastPos = true;
                 }
@@ -220,7 +234,7 @@ public class EnemyAIScript : MonoBehaviour
         }
         else
         {
-            isInvestigateHostile = false;
+            //isInvestigateHostile = false;
             EnemyState = EEnemyState.Hostile;
         }
     }
@@ -257,7 +271,7 @@ public class EnemyAIScript : MonoBehaviour
         {
             timeToWait -= Time.deltaTime;
             if (Vector3.Distance(playerRef.transform.position, transform.position) < fov.GetRadiusSuspicious()) {
-                playerLastSeenPos = playerRef.transform.position;
+                EnemyManager.m_Instance.SetLastSeenPos(playerRef.transform.position);
             }
             yield return null;
         }
@@ -270,7 +284,7 @@ public class EnemyAIScript : MonoBehaviour
         }
         else
         {
-            enemy_NavMeshAgent.destination = playerLastSeenPos;
+            enemy_NavMeshAgent.destination = EnemyManager.m_Instance.GetLastSeenPos();
             yield return CheckBeforeLeaving();
         }
     }
@@ -290,22 +304,22 @@ public class EnemyAIScript : MonoBehaviour
             yield return new WaitForSeconds(0.2f);
             
             currentFOVState = fov.FieldOfViewCheck();
-            
-            //test out if statements :p
-            switch (currentFOVState)
-            {
-                case EFOVState.Hostile:
-                    //if (EnemyState != EEnemyState.InvestigateHostile) {
+
+            if (EnemyState != EEnemyState.None) {
+                switch (currentFOVState)
+                {
+                    case EFOVState.Hostile:
                         EnemyState = EEnemyState.Hostile;
-                    //}
-                    break;
-                case EFOVState.Suspicious:
-                    //if (EnemyState != EEnemyState.Hostile || EnemyState != EEnemyState.InvestigateHostile) { 
+                        EnemyManager.m_Instance.SetPlayerHasBeenSeen(true);
+                        break;
+                    case EFOVState.Suspicious:
                         EnemyState = EEnemyState.Suspicious;
-                    //}
-                    break;
-                case EFOVState.Nothing:
-                    break;
+                        EnemyManager.m_Instance.SetPlayerHasBeenSeen(true);
+                        break;
+                    case EFOVState.Nothing:
+                        EnemyManager.m_Instance.SetPlayerHasBeenSeen(false);
+                        break;
+                }
             }
         }
     }
@@ -342,4 +356,4 @@ public class EnemyAIScript : MonoBehaviour
     public float GetHealth() { return Health; }
 }
 
-public enum EEnemyState { Default, Suspicious, InvestigateHostile, Hostile}
+public enum EEnemyState { Default, Suspicious, InvestigateHostile, Hostile, None}

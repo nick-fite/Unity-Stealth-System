@@ -13,7 +13,6 @@ TagManager:
   - EnemyPathPos
   - SearchWaypoint
   - AlarmButton
-  - TargetMask
   - Silencer
   - Enemy
   layers:

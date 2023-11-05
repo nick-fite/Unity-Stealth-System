@@ -15,6 +15,7 @@ public class FieldOfView : MonoBehaviour
 
     [SerializeField] private bool canSeePlayer;
 
+     float test;
 
     private void Start()
     {
@@ -34,31 +35,28 @@ public class FieldOfView : MonoBehaviour
 
     public EFOVState FieldOfViewCheck()
     {
-        Collider[] hostileRangeCheck = Physics.OverlapSphere(transform.position, radiusHostile, targetMask);
-        Collider[] suspiciousRangeCheck = Physics.OverlapSphere(transform.position, radiusSuspicious, targetMask);
+        Collider[] rangeCheck = Physics.OverlapSphere(transform.position, radiusSuspicious, targetMask);
 
-        bool hostile = false;
-        bool suspicious = false;
+        if (rangeCheck.Length > 0)
+        {
+            canSeePlayer = rangeChecker(rangeCheck);
 
-        if (hostileRangeCheck.Length != 0)
-        {
-            canSeePlayer = rangeChecker(hostileRangeCheck);
-            hostile = true;
-        }
-        else if (suspiciousRangeCheck.Length != 0)
-        {
-            canSeePlayer = rangeChecker(suspiciousRangeCheck);
-            suspicious = true;
-        }
-        else if (canSeePlayer) { canSeePlayer = false; }
+            if (canSeePlayer)
+            {
+                Debug.Log("saw");
+                float distToPlayer = Vector3.Distance(transform.position, rangeCheck[0].transform.position);
 
-        if ((suspicious && hostile) || hostile)
-        {
-            return EFOVState.Hostile;
-        }
-        else if (suspicious && !hostile)
-        {
-            return EFOVState.Suspicious;
+                if (distToPlayer > radiusHostile && distToPlayer < radiusSuspicious)
+                {
+                    return EFOVState.Suspicious;
+                }
+                else if (distToPlayer < radiusHostile)
+                {
+                    return EFOVState.Hostile;
+                }
+                else { return EFOVState.Nothing; }
+            }
+            else { return EFOVState.Nothing; }
         }
         else
         {
@@ -70,11 +68,11 @@ public class FieldOfView : MonoBehaviour
     {
         Transform target = collidersToCheck[0].transform;
         Vector3 directionToTarget = (target.position - transform.position).normalized;
-
-        if (Vector3.Angle(transform.forward, directionToTarget) < angle / 2)
+        float distanceToTarget = Vector3.Distance(transform.position, target.position);
+        
+        if (Vector3.Angle(transform.forward, directionToTarget) < angle / 2 && distanceToTarget < radiusSuspicious)
         {
-            float distanceToTarget = Vector3.Distance(transform.position, target.position);
-            if (!Physics.Raycast(transform.position, directionToTarget, distanceToTarget, obstructionMask))
+            if (!Physics.Raycast(transform.position, directionToTarget, distanceToTarget, obstructionMask) )
             {
                 return true;
             }
