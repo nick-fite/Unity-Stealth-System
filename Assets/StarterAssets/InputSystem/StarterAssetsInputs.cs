@@ -87,6 +87,11 @@ namespace StarterAssets
 		{
 			if (value.isPressed) { ToggleSilencer(); }
 		}
+
+		public void OnInteract(InputValue value)
+		{
+			if (value.isPressed) { GetAndSetColor(); }
+		}
 #endif
 
 
@@ -184,6 +189,16 @@ namespace StarterAssets
 		{
 			silencer = !silencer;
             SilencerObj.SetActive(silencer);
+		}
+
+		public void GetAndSetColor()
+		{
+			Ray ray = Camera.main.ViewportPointToRay(new Vector3(0.5f, 0.5f, 0));
+			RaycastHit hit;
+			if (Physics.Raycast(ray, out hit, 5f, LayerMask.GetMask("ObstructionMask")))
+			{
+				GameObject.FindGameObjectWithTag("PlayerAlphaSurface").GetComponent<Renderer>().material = hit.collider.gameObject.GetComponent<Renderer>().material;
+			}
 		}
 
         private void OnApplicationFocus(bool hasFocus)

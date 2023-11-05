@@ -49,10 +49,17 @@ public class FieldOfView : MonoBehaviour
                 Debug.Log("saw");
                 float distToPlayer = Vector3.Distance(transform.position, rangeCheck[0].transform.position);
 
-                if (distToPlayer > radiusHostile && distToPlayer < radiusSuspicious 
-                    && ObstructionBehindPlayer.GetComponent<Renderer>().material != GameManager.m_Instance.GetPlayer().GetComponent<Renderer>().material)
+                if (distToPlayer > radiusHostile && distToPlayer < radiusSuspicious)
                 {
-                    return EFOVState.Suspicious;
+                    Renderer obstructionRenderer;
+                    if (ObstructionBehindPlayer && ObstructionBehindPlayer.TryGetComponent(out obstructionRenderer)) 
+                    {
+                        if (obstructionRenderer.material != GameManager.m_Instance.GetPlayer().GetComponent<Renderer>().material)
+                        {
+                            return EFOVState.Suspicious;
+                        }
+                        else { return EFOVState.Nothing; }
+                    } else { return EFOVState.Nothing; }
                 }
                 else if (distToPlayer < radiusHostile)
                 {

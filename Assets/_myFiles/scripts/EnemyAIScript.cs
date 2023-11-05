@@ -42,6 +42,7 @@ public class EnemyAIScript : MonoBehaviour
     [SerializeField]private bool IsHostile;
     [SerializeField] private bool isInvestigateHostile;
     [SerializeField]private bool hasInvestiagedLastPos;
+    private bool IsShowingHostileSprite;
 
     private float Health;
     private Rigidbody[] RagDollRigidbodies;
@@ -159,7 +160,7 @@ public class EnemyAIScript : MonoBehaviour
     private void Hostile()
     {
         if (!isInvestigateHostile) {
-            StartCoroutine(ShowHostileSprite());
+            if (!IsShowingHostileSprite) { StartCoroutine(ShowHostileSprite()); }
             if (!isCoward)
             {
                 if (fov.GetCanSeePlayer())
@@ -223,6 +224,7 @@ public class EnemyAIScript : MonoBehaviour
         isInvestigateHostile = true;
         if (!fov.GetCanSeePlayer())
         {
+            enemyAnimation.SetContinueShooting(false);
             if (hasInvestiagedLastPos)
             {
                 SearchWaypointIndex = GoToWaypoints(searchWaypoints, SearchWaypointIndex);
@@ -238,7 +240,7 @@ public class EnemyAIScript : MonoBehaviour
         }
         else
         {
-            //isInvestigateHostile = false;
+            isInvestigateHostile = false;
             EnemyState = EEnemyState.Hostile;
         }
     }
@@ -351,6 +353,38 @@ public class EnemyAIScript : MonoBehaviour
         }
     }
 
+    public void Hear(Vector3 soundPos, bool silenced)
+    {
+        NavMeshPath path = new NavMeshPath();
+        NavMesh.CalculatePath(transform.position, soundPos, NavMesh.AllAreas, path);
+
+        float distance = 0.0f;
+        for (int i = 0; i < path.corners.Length -1; i++)
+        {
+            distance += Vector3.Distance(path.corners[i], path.corners[i + 1]);
+            Debug.DrawLine(path.corners[i], path.corners[i+1], Color.magenta);
+        }
+
+        if (silenced)
+        {
+            if (path.corners.Length < 3 && distance < 10f)
+            {
+                EnemyManager.m_Instance.SetLastSeenPos(soundPos);
+                transform.LookAt(soundPos);
+                EnemyState = EEnemyState.Suspicious;
+            }
+        }
+        else
+        {
+            if (path.corners.Length < 5 && distance < 15f)
+            {
+                EnemyManager.m_Instance.SetLastSeenPos(soundPos);
+                transform.LookAt(soundPos);
+                EnemyState = EEnemyState.Suspicious;
+            }
+        }
+    }
+
     IEnumerator ShowSuspiciousSprite()
     {
         QuestionMark.enabled = true;
@@ -360,9 +394,11 @@ public class EnemyAIScript : MonoBehaviour
 
     IEnumerator ShowHostileSprite()
     {
+        IsShowingHostileSprite = true;
         ExclamationMark.enabled = true;
         yield return new WaitForSeconds(1.0f);
         ExclamationMark.enabled = false;
+        IsShowingHostileSprite = false;
     }
 
     public void SetAlarmPos(Transform pos) { alarmPos = pos; }

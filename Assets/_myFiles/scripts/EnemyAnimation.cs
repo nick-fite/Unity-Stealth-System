@@ -97,7 +97,6 @@ public class EnemyAnimation : MonoBehaviour
 
     public IEnumerator Shooting() 
     {
-        
         while (ContinueShooting)
         {
             Ray ray = new Ray(StartingPos.transform.position, transform.forward);

@@ -1305,7 +1305,7 @@ GameObject:
   - component: {fileID: 4154890761360804701}
   m_Layer: 0
   m_Name: Alpha_Surface
-  m_TagString: Untagged
+  m_TagString: PlayerAlphaSurface
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -1752,7 +1752,7 @@ MonoBehaviour:
   rightShoulder: {fileID: 7641608034372430099}
   MuzzleFlash: {fileID: 8703451049481134517}
   GunSound: {fileID: 8380504393398499397}
-  SilencedAudio: {fileID: 8300000, guid: 35613cb7865a9c848a2a4fef85357ee3, type: 3}
+  SilencedAudio: {fileID: 8300000, guid: 74618503352f5b84e84860df931c8192, type: 3}
   NormalAudio: {fileID: 8300000, guid: 11c8071af2279d94a9e797f7cf35fee3, type: 3}
   health: 20
 --- !u!114 &6010193244787427028

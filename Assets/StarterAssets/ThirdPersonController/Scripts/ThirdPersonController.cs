@@ -401,7 +401,6 @@ namespace StarterAssets
                 {
                     hasShot = true;
                     Ray ray = Camera.main.ViewportPointToRay(new Vector3(0.5f, 0.5f, 0));
-                    //Ray ray = new Ray(CinemachineCameraTarget.transform.position, CinemachineCameraTarget.transform.forward);
                     Debug.DrawRay(ray.origin, ray.direction);
 
                     RaycastHit hit;
@@ -409,8 +408,6 @@ namespace StarterAssets
                     {
                         transform.rotation = Quaternion.Euler(0.0f, _mainCamera.transform.rotation.eulerAngles.y, 0.0f);
                         gun.transform.LookAt(hit.point);
-
-                        Debug.Log(hit.collider.gameObject.tag);
 
                         if (hit.collider.gameObject.tag == "Enemy")
                         {
@@ -427,10 +424,30 @@ namespace StarterAssets
                     if (_input.silencer)
                     {
                         GunSound.clip = SilencedAudio;
+                        Collider[] nearbyEnemies = Physics.OverlapSphere(transform.position, 6f, LayerMask.GetMask("EnemyMask"));
+
+                        foreach (Collider enemy in nearbyEnemies)
+                        {
+                            EnemyAIScript AI;
+                            if (enemy.gameObject.TryGetComponent(out AI))
+                            {
+                                AI.Hear(transform.position, true);
+                            }
+                        }
                     }
                     else
                     {
                         GunSound.clip = NormalAudio;
+                        Collider[] nearbyEnemies = Physics.OverlapSphere(transform.position, 6f, LayerMask.GetMask("EnemyMask"));
+
+                        foreach (Collider enemy in nearbyEnemies)
+                        {
+                            EnemyAIScript AI;
+                            if (enemy.gameObject.TryGetComponent(out AI))
+                            {
+                                AI.Hear(transform.position, false);
+                            }
+                        }
                     }
                     GunSound.Play();
 
