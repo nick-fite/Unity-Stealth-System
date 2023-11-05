@@ -348,7 +348,7 @@ MonoBehaviour:
   - Enemy: {fileID: 1910726716538367406, guid: 597e2629ceae5de42ae4c360bb08a965, type: 3}
     EnemyPos: {fileID: 621006196}
     isCoward: 0
-  - Enemy: {fileID: 7095907839996585706, guid: 97a44870fefa6dd44822e6e6554f786f, type: 3}
+  - Enemy: {fileID: 1910726716538367406, guid: 597e2629ceae5de42ae4c360bb08a965, type: 3}
     EnemyPos: {fileID: 955908230}
     isCoward: 1
   enemyGameobj: []

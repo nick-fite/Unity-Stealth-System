@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.AI;
 
 public class FieldOfView : MonoBehaviour
 {
@@ -14,6 +15,8 @@ public class FieldOfView : MonoBehaviour
     private LayerMask obstructionMask;
 
     [SerializeField] private bool canSeePlayer;
+
+    private GameObject ObstructionBehindPlayer;
 
      float test;
 
@@ -46,7 +49,8 @@ public class FieldOfView : MonoBehaviour
                 Debug.Log("saw");
                 float distToPlayer = Vector3.Distance(transform.position, rangeCheck[0].transform.position);
 
-                if (distToPlayer > radiusHostile && distToPlayer < radiusSuspicious)
+                if (distToPlayer > radiusHostile && distToPlayer < radiusSuspicious 
+                    && ObstructionBehindPlayer.GetComponent<Renderer>().material != GameManager.m_Instance.GetPlayer().GetComponent<Renderer>().material)
                 {
                     return EFOVState.Suspicious;
                 }
@@ -72,8 +76,14 @@ public class FieldOfView : MonoBehaviour
         
         if (Vector3.Angle(transform.forward, directionToTarget) < angle / 2 && distanceToTarget < radiusSuspicious)
         {
-            if (!Physics.Raycast(transform.position, directionToTarget, distanceToTarget, obstructionMask) )
+            
+            if (!Physics.Raycast(transform.position, directionToTarget, distanceToTarget, obstructionMask ))
             {
+                RaycastHit obstruction;
+                if (Physics.Raycast(transform.position, directionToTarget, out obstruction, distanceToTarget + 5f, obstructionMask))
+                {
+                    ObstructionBehindPlayer = obstruction.collider.gameObject;
+                }
                 return true;
             }
             else

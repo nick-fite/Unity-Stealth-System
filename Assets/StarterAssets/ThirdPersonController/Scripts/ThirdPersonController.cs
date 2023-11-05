@@ -3,6 +3,7 @@ using Cinemachine.Utility;
 using System;
 using System.Collections;
 using System.Runtime.CompilerServices;
+using Unity.AI.Navigation;
 using Unity.Mathematics;
 using Unity.VisualScripting;
 using UnityEngine;
@@ -135,6 +136,10 @@ namespace StarterAssets
         [SerializeField] private GameObject leftShoulder;
         [SerializeField] private GameObject rightShoulder;
         [SerializeField] private ParticleSystem MuzzleFlash;
+        [SerializeField] private AudioSource GunSound;
+        [SerializeField] private AudioClip SilencedAudio;
+        [SerializeField] private AudioClip NormalAudio;
+
 
         [SerializeField] private float health;
 
@@ -165,11 +170,6 @@ namespace StarterAssets
 
         private void Start()
         {
-            //stuckToWallX = false;
-            //stuckToWallY = false;
-            //stuckToWallZ = false;
-
-            //wallDectection = GetComponent<WallDetection>();
             _cinemachineTargetYaw = CinemachineCameraTarget.transform.rotation.eulerAngles.y;
             
             _hasAnimator = TryGetComponent(out _animator);
@@ -335,23 +335,12 @@ namespace StarterAssets
                 }*/
             }
 
+
             Vector3 targetDirection = Quaternion.Euler(0.0f, _targetRotation, 0.0f) * Vector3.forward;
 
 
             Vector3 movement = targetDirection.normalized * (_speed * Time.deltaTime) +
                                  new Vector3(0.0f, _verticalVelocity, 0.0f) * Time.deltaTime;
-
-            /*if (_input.move != Vector2.zero) {
-                if (wallDectection.GetLeftHit())
-                {
-                    movement += -transform.right * .0003f;
-                }
-                if (wallDectection.GetRightHit())
-                {
-                    movement += transform.right * .0003f;
-                }
-            }*/
-
             _controller.Move(movement);
 
             // update animator if using character
@@ -434,6 +423,17 @@ namespace StarterAssets
 
                         }
                     }
+
+                    if (_input.silencer)
+                    {
+                        GunSound.clip = SilencedAudio;
+                    }
+                    else
+                    {
+                        GunSound.clip = NormalAudio;
+                    }
+                    GunSound.Play();
+
                     MuzzleFlash.Play();
                 }
             }

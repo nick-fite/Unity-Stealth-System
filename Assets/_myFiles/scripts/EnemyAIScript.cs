@@ -46,6 +46,9 @@ public class EnemyAIScript : MonoBehaviour
     private float Health;
     private Rigidbody[] RagDollRigidbodies;
 
+    [SerializeField] private SpriteRenderer QuestionMark;
+    [SerializeField]private SpriteRenderer ExclamationMark;
+
     private void Awake()
     {
         RagDollRigidbodies = GetComponentsInChildren<Rigidbody>();
@@ -156,6 +159,7 @@ public class EnemyAIScript : MonoBehaviour
     private void Hostile()
     {
         if (!isInvestigateHostile) {
+            StartCoroutine(ShowHostileSprite());
             if (!isCoward)
             {
                 if (fov.GetCanSeePlayer())
@@ -263,6 +267,7 @@ public class EnemyAIScript : MonoBehaviour
 
     IEnumerator GetPlayerPos()
     {
+        StartCoroutine(ShowSuspiciousSprite());
         FindingPlayer = true;
         enemy_NavMeshAgent.destination = transform.position;
 
@@ -344,6 +349,20 @@ public class EnemyAIScript : MonoBehaviour
         {
             rb.isKinematic = false;
         }
+    }
+
+    IEnumerator ShowSuspiciousSprite()
+    {
+        QuestionMark.enabled = true;
+        yield return new WaitForSeconds(1.0f);
+        QuestionMark.enabled = false;
+    }
+
+    IEnumerator ShowHostileSprite()
+    {
+        ExclamationMark.enabled = true;
+        yield return new WaitForSeconds(1.0f);
+        ExclamationMark.enabled = false;
     }
 
     public void SetAlarmPos(Transform pos) { alarmPos = pos; }
