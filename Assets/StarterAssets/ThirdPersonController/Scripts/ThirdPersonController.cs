@@ -3,6 +3,7 @@ using Cinemachine.Utility;
 using System;
 using System.Collections;
 using System.Runtime.CompilerServices;
+using TMPro;
 using Unity.AI.Navigation;
 using Unity.Mathematics;
 using Unity.VisualScripting;
@@ -10,6 +11,8 @@ using UnityEngine;
 #if ENABLE_INPUT_SYSTEM 
 using UnityEngine.InputSystem;
 using UnityEngine.InputSystem.XR;
+using UnityEngine.SceneManagement;
+using UnityEngine.UI;
 #endif
 
 /* Note: animations are called via the controller for both the character and capsule using animator null checks
@@ -145,6 +148,11 @@ namespace StarterAssets
 
         private bool hasShot;
 
+        private TextMeshProUGUI HealthText;
+
+        private Rigidbody[] RagDollRigidbodies;
+
+        private bool HasIntel;
 
         private bool IsCurrentDeviceMouse
         {
@@ -161,6 +169,10 @@ namespace StarterAssets
 
         private void Awake()
         {
+            Cursor.lockState = CursorLockMode.Locked;
+            Cursor.visible = false;
+            RagDollRigidbodies = GetComponentsInChildren<Rigidbody>();
+            DisableRagDoll();
             // get a reference to our main camera
             if (_mainCamera == null)
             {
@@ -194,25 +206,37 @@ namespace StarterAssets
             main.duration = 1f;
 
             health = 20f;
+            HealthText = GameObject.FindGameObjectWithTag("HealthNum").GetComponent<TextMeshProUGUI>();
         }
 
         private void Update()
         {
-            _hasAnimator = TryGetComponent(out _animator);
 
-            Shoot();
-            ADS();
-            Crouch();
-            JumpAndGravity();
-            GroundedCheck();
-            Move();
+            if (health <= 0)
+            { 
+                _animator.enabled = false;
+                EnableRagDoll();
+                StartCoroutine(WaitBeforeGoingToMainMenu());
+            }
+            else
+            {
 
-            if (health <= 0) { Debug.Log("dead"); }
+                _hasAnimator = TryGetComponent(out _animator);
+
+                Shoot();
+                ADS();
+                Crouch();
+
+                Move();
+                GroundedCheck();
+                JumpAndGravity();
+                CameraRotation();
+            }
         }
 
-        private void LateUpdate()
+        private void FixedUpdate()
         {
-            CameraRotation();
+            HealthText.text = health.ToString();
         }
 
         private void AssignAnimationIDs()
@@ -484,6 +508,7 @@ namespace StarterAssets
                 // Jump
                 if (_input.jump && _jumpTimeoutDelta <= 0.0f)
                 {
+                    Debug.Log("jumping: " + _input.jump);
                     // the square root of H * -2 * G = how much velocity needed to reach desired height
                     _verticalVelocity = Mathf.Sqrt(JumpHeight * -2f * Gravity);
 
@@ -530,6 +555,28 @@ namespace StarterAssets
             }
         }
 
+        private void DisableRagDoll()
+        {
+            foreach (Rigidbody rb in RagDollRigidbodies)
+            {
+                rb.isKinematic = true;
+            }
+        }
+
+        private void EnableRagDoll()
+        {
+            foreach (Rigidbody rb in RagDollRigidbodies)
+            {
+                rb.isKinematic = false;
+            }
+        }
+
+        IEnumerator WaitBeforeGoingToMainMenu()
+        {
+            yield return new WaitForSeconds(7f);
+            SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex - 1);
+        }
+
         private static float ClampAngle(float lfAngle, float lfMin, float lfMax)
         {
             if (lfAngle < -360f) lfAngle += 360f;
@@ -573,5 +620,7 @@ namespace StarterAssets
 
         public void SetHealth(float newHealth) { health = newHealth; }
         public float GetHealth() { return health; }
+        public bool GetHasIntel() { return HasIntel; }
+        public void SetHasIntel(bool newState) { HasIntel = newState; }
     }
 }

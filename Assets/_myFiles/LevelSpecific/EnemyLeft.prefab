@@ -6435,6 +6435,12 @@ CharacterJoint:
   m_EnablePreprocessing: 0
   m_MassScale: 1
   m_ConnectedMassScale: 1
+--- !u!4 &2581913030033149117 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: -3321919801592875672, guid: 0f38d50c3a4f8a849b9407591635bf10,
+    type: 3}
+  m_PrefabInstance: {fileID: 8228894224233036245}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &2817038344287112542 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: -3086436065929644917, guid: 0f38d50c3a4f8a849b9407591635bf10,
@@ -7316,6 +7322,7 @@ MonoBehaviour:
   radiusSuspicious: 10
   angle: 120
   canSeePlayer: 0
+  RayStart: {fileID: 2581913030033149117}
 --- !u!114 &3655117524212653822
 MonoBehaviour:
   m_ObjectHideFlags: 0

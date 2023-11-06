@@ -17,6 +17,9 @@ TagManager:
   - Enemy
   - TargetMask
   - PlayerAlphaSurface
+  - HealthNum
+  - AlertNum
+  - PlayerChest
   layers:
   - Default
   - TransparentFX
@@ -28,7 +31,7 @@ TagManager:
   - TargetMask
   - ObstructionMask
   - EnemyMask
-  - 
+  - Character
   - 
   - 
   - 

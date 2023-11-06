@@ -8,6 +8,7 @@ public class GameManager : MonoBehaviour
 
     [SerializeField] private GameObject PlayerPrefab;
     [SerializeField] private Transform PlayerSpawn;
+    private GameObject Chest;
     private GameObject Player;
 
     private void Awake()
@@ -31,7 +32,10 @@ public class GameManager : MonoBehaviour
         {
             Debug.LogWarning("PlayerPrefab or PlayerSpawn not referenced");
         }
+
+        Chest = GameObject.FindGameObjectWithTag("PlayerChest");
     }
 
     public GameObject GetPlayer() { return Player.GetComponentInChildren<CharacterController>().gameObject; }
+    public GameObject GetChest() { return Chest; }
 }

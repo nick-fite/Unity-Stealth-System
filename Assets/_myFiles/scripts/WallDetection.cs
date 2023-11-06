@@ -1,10 +1,7 @@
 using StarterAssets;
 using System.Collections;
 using System.Collections.Generic;
-using UnityEditor.Experimental.GraphView;
 using UnityEngine;
-using UnityEngine.InputSystem.Android.LowLevel;
-using UnityEngine.InputSystem.XR;
 
 public class WallDetection : MonoBehaviour
 {

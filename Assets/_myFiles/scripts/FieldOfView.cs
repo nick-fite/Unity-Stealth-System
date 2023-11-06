@@ -15,6 +15,7 @@ public class FieldOfView : MonoBehaviour
     private LayerMask obstructionMask;
 
     [SerializeField] private bool canSeePlayer;
+    [SerializeField] Transform RayStart;
 
     private GameObject ObstructionBehindPlayer;
 
@@ -27,15 +28,6 @@ public class FieldOfView : MonoBehaviour
         //StartCoroutine(FOVRoutine());
     }
 
-    /*IEnumerator FOVRoutine()
-    {
-        while (true)
-        {
-            yield return new WaitForSeconds(0.2f);
-            FieldOfViewCheck();
-        }
-    }*/
-
     public EFOVState FieldOfViewCheck()
     {
         Collider[] rangeCheck = Physics.OverlapSphere(transform.position, radiusSuspicious, targetMask);
@@ -46,7 +38,6 @@ public class FieldOfView : MonoBehaviour
 
             if (canSeePlayer)
             {
-                Debug.Log("saw");
                 float distToPlayer = Vector3.Distance(transform.position, rangeCheck[0].transform.position);
 
                 if (distToPlayer > radiusHostile && distToPlayer < radiusSuspicious)
@@ -54,7 +45,7 @@ public class FieldOfView : MonoBehaviour
                     Renderer obstructionRenderer;
                     if (ObstructionBehindPlayer && ObstructionBehindPlayer.TryGetComponent(out obstructionRenderer)) 
                     {
-                        if (obstructionRenderer.material != GameManager.m_Instance.GetPlayer().GetComponent<Renderer>().material)
+                        if (obstructionRenderer.material != GameObject.FindGameObjectWithTag("PlayerAlphaSurface").GetComponent<Renderer>().material)
                         {
                             return EFOVState.Suspicious;
                         }
@@ -87,7 +78,7 @@ public class FieldOfView : MonoBehaviour
             if (!Physics.Raycast(transform.position, directionToTarget, distanceToTarget, obstructionMask ))
             {
                 RaycastHit obstruction;
-                if (Physics.Raycast(transform.position, directionToTarget, out obstruction, distanceToTarget + 5f, obstructionMask))
+                if (Physics.Raycast(RayStart.position, directionToTarget, out obstruction, distanceToTarget + 5f, obstructionMask))
                 {
                     ObstructionBehindPlayer = obstruction.collider.gameObject;
                 }

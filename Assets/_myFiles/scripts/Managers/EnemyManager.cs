@@ -3,7 +3,9 @@ using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
+using TMPro;
 using UnityEngine;
+using UnityEngine.InputSystem.LowLevel;
 
 public class EnemyManager : MonoBehaviour
 {
@@ -34,6 +36,8 @@ public class EnemyManager : MonoBehaviour
 
     private Vector3 LastSeenPos;
 
+    private TextMeshProUGUI AlertNum;
+
     private void Awake()
     {
         WaitForNormalRunning = false;
@@ -51,6 +55,7 @@ public class EnemyManager : MonoBehaviour
 
     private void Start()
     {
+        AlertNum = GameObject.FindGameObjectWithTag("AlertNum").GetComponent<TextMeshProUGUI>();
         if (alarmButton == null) { alarmButton = GameObject.FindGameObjectWithTag("AlarmButton"); }
         if (searchWaypoints.Count < 1) { searchWaypoints = GameObject.FindGameObjectsWithTag("SearchWaypoint").ToList(); }
 
@@ -83,36 +88,73 @@ public class EnemyManager : MonoBehaviour
         float timeToWait = WaitBeforePatrol;
         while (timeToWait > 0)
         {
-            Debug.Log(timeToWait);
             timeToWait -= Time.deltaTime;
             if (PlayerHasBeenSeen)
             {
                 timeToWait = WaitBeforePatrol;
             }
-            yield return new WaitForSeconds(0.1f);
+            AlertNum.text = timeToWait.ToString();
+            yield return null;
         }
-        SetEnemiesState(EEnemyState.Default, false, false);
+        AlertNum.text = "0";
+        SetEnemiesDefaultState();
         WaitForNormalRunning = false;
+        yield return null;
     }
 
-    private void SetEnemiesState(EEnemyState newState, bool isHostile, bool isInvestigateHostile) 
-    {
-        Debug.Log("setting state"); 
-        
+    private void SetEnemiesState(EEnemyState newState, bool isHostile, bool isInvestigateHostile, bool isCoward) 
+    {   
         foreach (GameObject obj in enemyGameobj)
         {
             obj.GetComponentInChildren<EnemyAIScript>().SetEnemyState(newState);
             obj.GetComponentInChildren<EnemyAIScript>().SetIsHostile(isHostile);
             obj.GetComponentInChildren<EnemyAIScript>().SetIsInvestigateHostile(isInvestigateHostile);
+            obj.GetComponentInChildren<EnemyAIScript>().SetIsCoward(isCoward);
+            foreach (EnemyInfo info in Enemies) {
+                if (info.Enemy == obj)
+                {
+                    obj.GetComponentInChildren<EnemyAIScript>().SetIsCoward(info.isCoward);
+                }
+            }
+        }
+    }
+
+    private void SetEnemiesDefaultState() 
+    {
+        foreach (GameObject obj in enemyGameobj)
+        {
+            GameObject enemyObj = obj.GetComponentInChildren<EnemyAIScript>().gameObject;
+            EnemyAIScript AI;
+            if (enemyObj.TryGetComponent(out AI))
+            {
+                AI.SetEnemyState(EEnemyState.Default);
+                AI.SetIsHostile(false);
+                AI.SetIsInvestigateHostile(false);
+                foreach (EnemyInfo info in Enemies)
+                {
+                    if (info.Enemy == obj)
+                    {
+                        AI.SetIsCoward(info.isCoward);
+                    }
+                }
+            }
         }
     }
 
     public void AlertAllEnemies() 
     {
-        SetEnemiesState(EEnemyState.InvestigateHostile, true, true);
+        SetEnemiesState(EEnemyState.InvestigateHostile, true, true, false);
+    }
+
+    public void RemoveEnemy(GameObject enemy)
+    {
+        if (enemyGameobj.Contains(enemy)) {
+            enemyGameobj.Remove(enemy);
+        }
     }
 
     public void SetPlayerHasBeenSeen(bool newState) { PlayerHasBeenSeen = newState; }
     public void SetLastSeenPos(Vector3 newPos) { LastSeenPos = newPos; }
     public Vector3 GetLastSeenPos() { return LastSeenPos; }
+
 }

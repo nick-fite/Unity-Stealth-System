@@ -54,8 +54,8 @@ public class EnemyAnimation : MonoBehaviour
         if (!armsRaised)
         {
             armsRaised = true;
-            float rateLeft = 1.0f / Quaternion.Angle(LeftArm.transform.rotation, LeftArmShootingPos.rotation) * AnimSpeed;
-            float rateRight = 1.0f / Quaternion.Angle(RightArm.transform.rotation, RightArmShootingPos.rotation) * AnimSpeed;
+            float rateLeft = 1.0f / Quaternion.Angle(LeftArm.transform.rotation, LeftArmShootingPos.rotation) * 50;
+            float rateRight = 1.0f / Quaternion.Angle(RightArm.transform.rotation, RightArmShootingPos.rotation) * 50;
 
             float tLeft = 0.0f;
             float tRight = 0.0f;
@@ -78,8 +78,8 @@ public class EnemyAnimation : MonoBehaviour
     {
         armsRaised = false;
         ContinueShooting = false;
-        float rateLeft = 1.0f / Quaternion.Angle(LeftArm.transform.rotation, LeftArmDefaultPos.rotation) * AnimSpeed;
-        float rateRight = 1.0f / Quaternion.Angle(RightArm.transform.rotation, RightArmDefaultPos.rotation) * AnimSpeed;
+        float rateLeft = 1.0f / Quaternion.Angle(LeftArm.transform.rotation, LeftArmDefaultPos.rotation) * 50;
+        float rateRight = 1.0f / Quaternion.Angle(RightArm.transform.rotation, RightArmDefaultPos.rotation) * 50;
 
         float tLeft = 0.0f;
         float tRight = 0.0f;
