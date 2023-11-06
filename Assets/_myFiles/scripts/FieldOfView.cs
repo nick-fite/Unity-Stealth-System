@@ -47,11 +47,14 @@ public class FieldOfView : MonoBehaviour
                     {
                         if (obstructionRenderer.material != GameObject.FindGameObjectWithTag("PlayerAlphaSurface").GetComponent<Renderer>().material)
                         {
-                            Debug.Log("seen");
                             return EFOVState.Suspicious;
                         }
                         else { return EFOVState.Nothing; }
-                    } else { return EFOVState.Suspicious; }
+                    }
+                    else
+                    {
+                        return EFOVState.Suspicious;
+                    }
                 }
                 else if (distToPlayer < radiusHostile)
                 {
