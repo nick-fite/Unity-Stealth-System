@@ -189,7 +189,6 @@ public class EnemyAIScript : MonoBehaviour
                         EnemyManager.m_Instance.AlertAllEnemies();
                         EnemyManager.m_Instance.InvestigateHostileToDefault();
                         GetPlayerPosOnce = false;
-                        isCoward = false;
                         IsHostile = false;
                     }
                 }

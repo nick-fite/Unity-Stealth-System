@@ -47,10 +47,11 @@ public class FieldOfView : MonoBehaviour
                     {
                         if (obstructionRenderer.material != GameObject.FindGameObjectWithTag("PlayerAlphaSurface").GetComponent<Renderer>().material)
                         {
+                            Debug.Log("seen");
                             return EFOVState.Suspicious;
                         }
                         else { return EFOVState.Nothing; }
-                    } else { return EFOVState.Nothing; }
+                    } else { return EFOVState.Suspicious; }
                 }
                 else if (distToPlayer < radiusHostile)
                 {
@@ -78,9 +79,10 @@ public class FieldOfView : MonoBehaviour
             if (!Physics.Raycast(transform.position, directionToTarget, distanceToTarget, obstructionMask ))
             {
                 RaycastHit obstruction;
-                if (Physics.Raycast(RayStart.position, directionToTarget, out obstruction, distanceToTarget + 5f, obstructionMask))
+                if (Physics.Raycast(RayStart.position, directionToTarget, out obstruction, distanceToTarget + 10f, obstructionMask))
                 {
                     ObstructionBehindPlayer = obstruction.collider.gameObject;
+                    Debug.Log(ObstructionBehindPlayer.name);
                 }
                 return true;
             }
